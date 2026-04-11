@@ -23,6 +23,15 @@ class AuthRepository {
         }
     }
 
+    suspend fun getUserRole(uid: String): String? {
+        return try {
+            val doc = firestore.collection("users").document(uid).get().await()
+            doc.getString("role")
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     suspend fun register(fullName: String, email: String, password: String, role: String): Result<FirebaseUser> {
         return try {
             val result = auth.createUserWithEmailAndPassword(email, password).await()

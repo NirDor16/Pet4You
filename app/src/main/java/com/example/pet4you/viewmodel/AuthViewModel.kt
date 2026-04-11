@@ -10,7 +10,7 @@ import kotlinx.coroutines.launch
 sealed class AuthState {
     object Idle : AuthState()
     object Loading : AuthState()
-    object Success : AuthState()
+    data class Success(val role: String) : AuthState()
     data class Error(val message: String) : AuthState()
 }
 
@@ -28,10 +28,12 @@ class AuthViewModel : ViewModel() {
         viewModelScope.launch {
             _authState.value = AuthState.Loading
             val result = repository.login(email, password)
-            _authState.value = if (result.isSuccess) {
-                AuthState.Success
+            if (result.isSuccess) {
+                val uid = result.getOrNull()!!.uid
+                val role = repository.getUserRole(uid) ?: "DOG_OWNER"
+                _authState.value = AuthState.Success(role)
             } else {
-                AuthState.Error(result.exceptionOrNull()?.message ?: "Login failed")
+                _authState.value = AuthState.Error(result.exceptionOrNull()?.message ?: "Login failed")
             }
         }
     }
@@ -41,7 +43,7 @@ class AuthViewModel : ViewModel() {
             _authState.value = AuthState.Loading
             val result = repository.register(fullName, email, password, role)
             _authState.value = if (result.isSuccess) {
-                AuthState.Success
+                AuthState.Success(role)
             } else {
                 AuthState.Error(result.exceptionOrNull()?.message ?: "Registration failed")
             }

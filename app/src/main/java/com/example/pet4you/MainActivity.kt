@@ -5,7 +5,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.navigation.compose.rememberNavController
-import com.example.pet4you.repository.AuthRepository
 import com.example.pet4you.ui.navigation.NavGraph
 import com.example.pet4you.ui.navigation.Routes
 import com.example.pet4you.ui.theme.Pet4YouTheme
@@ -17,12 +16,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             Pet4YouTheme {
                 val navController = rememberNavController()
-                val startDestination = if (AuthRepository().currentUser != null) {
-                    Routes.HOME
-                } else {
-                    Routes.LOGIN
-                }
-                NavGraph(navController = navController, startDestination = startDestination)
+                NavGraph(navController = navController, startDestination = Routes.SPLASH)
             }
         }
     }

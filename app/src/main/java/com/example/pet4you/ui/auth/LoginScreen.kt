@@ -15,7 +15,7 @@ import com.example.pet4you.viewmodel.AuthViewModel
 
 @Composable
 fun LoginScreen(
-    onLoginSuccess: () -> Unit,
+    onLoginSuccess: (role: String) -> Unit,
     onNavigateToRegister: () -> Unit,
     authViewModel: AuthViewModel = viewModel()
 ) {
@@ -26,8 +26,9 @@ fun LoginScreen(
 
     LaunchedEffect(authState) {
         if (authState is AuthState.Success) {
+            val role = (authState as AuthState.Success).role
             authViewModel.resetState()
-            onLoginSuccess()
+            onLoginSuccess(role)
         }
     }
 
