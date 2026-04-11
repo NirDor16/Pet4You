@@ -73,7 +73,7 @@ Data Models
 * Each feature = separate branch
 * Pull → branch → develop → commit → push → PR → merge
 
-##  Important Development Rules
+## Important Development Rules
 
 * Always follow the current development context and focus on the active layer (Android, Backend, or Database)
 * Write clean, modular, and scalable code that fits the existing architecture
@@ -84,14 +84,12 @@ Data Models
 * Do not assume missing requirements — ask for clarification if needed
 * When working on a specific layer, do not implement other layers unless explicitly requested
 * Ensure all code aligns with the overall system architecture described above
-calable code
 
-##  Current Development Focus
+## Current Development Focus
 
 We are currently at the **initial development stage**.
 
 The Android project has been created and connected to GitHub, but no features are implemented yet.
-
 
 ## Project History & Status
 
