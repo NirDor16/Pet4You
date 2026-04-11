@@ -1,80 +1,112 @@
 # Pet4You - Project Context for Claude
 
 ## Project Overview
-Pet4You is an Android application for dog owners and service providers in the pet industry.
-It provides a centralized platform for managing all aspects of a dog's life:
-registration/login, dog profiles, reminders, social meetups, and service provider interaction.
+
+Pet4You is a full-stack Android application for dog owners and service providers in the pet industry.
+It provides a centralized platform for managing all aspects of a dog's life: authentication, dog profiles, reminders, social meetups, and service provider interactions.
 
 ## Architecture
+
 Full **Client-Server** architecture:
-- **Client**: Android app (Kotlin + Jetpack Compose) — handles UI and sends HTTP requests to the backend
-- **Backend**: Python + Flask — handles business logic, security, and AI integration (deployed on Render)
-- **Database**: Firebase Firestore — stores all core data
-- **Auth**: Firebase Authentication
+
+* **Client**: Android app (Kotlin + Jetpack Compose) — handles UI and sends HTTP requests to the backend
+* **Backend**: Python + Flask — handles business logic, security, and AI integration (deployed on Render)
+* **Database**: Firebase Firestore — stores all core data
+* **Auth**: Firebase Authentication
 
 The client **never** communicates directly with OpenAI. All AI requests go through the backend.
 
 ## Tech Stack
-| Layer | Technology |
-|-------|-----------|
-| Android App | Kotlin, Jetpack Compose, Android Studio |
-| Backend | Python, Flask, Visual Studio Code |
-| Deployment | Render (cloud) |
-| Database | Firebase Firestore |
-| Authentication | Firebase Authentication |
-| AI | OpenAI API (API key stored on backend only) |
-| Version Control | Git + GitHub |
+
+| Layer           | Technology                                  |
+| --------------- | ------------------------------------------- |
+| Android App     | Kotlin, Jetpack Compose, Android Studio     |
+| Backend         | Python, Flask, Visual Studio Code           |
+| Deployment      | Render (cloud)                              |
+| Database        | Firebase Firestore                          |
+| Authentication  | Firebase Authentication                     |
+| AI              | OpenAI API (API key stored on backend only) |
+| Version Control | Git + GitHub                                |
 
 ## User Roles
+
 Stored as `role` field in Firestore per user. Controls permissions and navigation flows:
-- `DOG_OWNER` — standard dog owner user
-- `SERVICE_PROVIDER` — vet, doggy sitter, groomer, etc.
-- `ADMIN` — administrative access
+
+* `DOG_OWNER`
+* `SERVICE_PROVIDER`
+* `ADMIN`
+
+## Core Data Models (Firestore)
+
+* **users**: uid, fullName, email, role, isBlocked, createdAt
+* **dogs**: dogId, ownerId, name, breed, birthDate, notes
+* **reminders**: reminderId, dogId, type, dateTime, frequency, status
+* **meetups**: meetupId, creatorId, location, dateTime, description, participants[]
+* **serviceProviders** (future)
+* **serviceRequests** (future)
 
 ## Features
-- **Auth**: Registration and login via Firebase Authentication
-- **Dog Profiles**: Create, update, and delete dog profiles
-- **Reminders**: Medications, vaccines, and other recurring tasks
-- **Social Meetups**: Create, search, and join meetups between dog owners
-- **Service Providers**: Profiles for vets, doggy sitters, groomers; send service requests
-- **AI Chat**: User types free text → request sent to backend → backend calls OpenAI API → response returned to app
-- **Future**: Smart meetup recommendation algorithm (backend)
 
-The core functionality (dog profiles, reminders, meetups) works independently even without AI/recommendations available.
+* Auth (Firebase Authentication)
+* Dog profile management (CRUD)
+* Reminders (CRUD)
+* Social meetups (create, search, join)
+* Service provider system (future)
+* AI Chat (via backend → OpenAI)
+* Recommendation system (future)
+
+Core features must work **independently** of AI availability.
 
 ## App Architecture Layers
-```
-UI (Activities / Fragments)
-        ↓
-ViewModel  — state management
-        ↓
-Repository — communicates with Firebase + backend via HTTP
-        ↓
-Data Models — shared structure between client and backend
-```
+
+UI (Compose Screens)
+↓
+ViewModel (state management)
+↓
+Repository (Firebase + backend API)
+↓
+Data Models
 
 ## Git Workflow
-- `main` branch = stable production version (source of truth)
-- Every feature/task is done on a **separate branch** created from `main`
-- Before starting: pull latest `main`, create a new branch
-- Work on the branch, make commits
-- When done: push branch to GitHub, open a **Pull Request**
-- After review: **merge** into `main`
-- After merge: everyone continues from the updated `main`
 
-**Tools:**
-- Android app → **Android Studio**
-- Backend → **Visual Studio Code**
-- Both connected to the same GitHub repository: `https://github.com/NirDor16/Pet4You.git`
+* `main` = stable branch
+* Each feature = separate branch
+* Pull → branch → develop → commit → push → PR → merge
+
+##  Important Development Rules
+
+* Always follow the current development context and focus on the active layer (Android, Backend, or Database)
+* Write clean, modular, and scalable code that fits the existing architecture
+* Follow MVVM architecture for Android components
+* Use proper data models and avoid hardcoded values
+* Keep separation of concerns (UI / ViewModel / Repository / Data)
+* Prefer reusable and maintainable solutions over quick fixes
+* Do not assume missing requirements — ask for clarification if needed
+* When working on a specific layer, do not implement other layers unless explicitly requested
+* Ensure all code aligns with the overall system architecture described above
+calable code
+
+##  Current Development Focus
+
+We are currently at the **initial development stage**.
+
+The Android project has been created and connected to GitHub, but no features are implemented yet.
+
+We will start by implementing:
+
+1. Firebase Authentication (Register/Login)
+2. User model with roles
+3. Navigation based on user role
 
 ## Project History & Status
 
 ### 2026-04-11 — Initial Setup
-- Created Android project (Pet4You) in Android Studio
-- Initialized git repository and connected to GitHub
-- Pushed initial commit: basic Jetpack Compose starter project (49 files)
-- Defined full project architecture and feature scope (described above)
-- Current state: empty starter project — no features implemented yet, ready for development
+
+* Created Android project (Pet4You) in Android Studio
+* Initialized git repository and connected to GitHub
+* Pushed initial commit (Compose starter project)
+* Defined architecture and features
 
 ---
-> **Note to Claude:** Update the "Project History & Status" section after every GitHub push or significant milestone. Add a new dated entry describing what changed. This file is the primary context source for new sessions.
+
+> Update this file after every milestone.
