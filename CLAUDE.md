@@ -160,18 +160,18 @@ The next step is implementing actual features, starting with **Dog Profile Manag
 
 ## What's NOT Done Yet ❌ (Next Steps)
 
-### Immediate — before merging to main:
-1. **Merge `feature/project-setup` → `main`** via Pull Request on GitHub
-
 ### Next features to implement (in order):
 
 **For DOG_OWNER:**
-2. **Dog Profile CRUD** — add/edit/delete dogs, list dogs screen
+1. **Dog Profile CRUD** — add/edit/delete dogs, list dogs screen
    - Needs: `DogRepository.kt`, `DogViewModel.kt`, `DogListScreen.kt`, `AddEditDogScreen.kt`
-3. **Reminders CRUD** — add/edit/delete reminders per dog
+   - Branch to create: `feature/dog-profiles`
+2. **Reminders CRUD** — add/edit/delete reminders per dog
    - Needs: `ReminderRepository.kt`, `ReminderViewModel.kt`, screens
-4. **Meetups** — create, search, join meetups
+   - Branch to create: `feature/reminders`
+3. **Meetups** — create, search, join meetups
    - Needs: `MeetupRepository.kt`, `MeetupViewModel.kt`, screens
+   - Branch to create: `feature/meetups`
 
 **For SERVICE_PROVIDER:**
 5. **Service Provider Profile** — create/edit provider profile
@@ -190,14 +190,14 @@ The next step is implementing actual features, starting with **Dog Profile Manag
 * Pushed initial commit (Compose starter project)
 * Defined full project architecture
 
-### 2026-04-11 — Foundation Complete
+### 2026-04-11 — Foundation Complete ✅ (merged to main)
 * Added all dependencies (Firebase, Navigation, ViewModel)
 * Created full package structure (MVVM)
 * Implemented data models (User, Dog, Reminder, Meetup)
 * Implemented Auth (login, register, logout, role-based navigation)
 * SplashScreen with auth guard
-* Home screen placeholders per role
-* Branch: `feature/project-setup` — **not yet merged to main**
+* Home screen placeholders per role (DogOwnerHomeScreen, ServiceProviderHomeScreen)
+* PR #1 merged to master — master is stable and up to date
 
 ---
 
