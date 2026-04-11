@@ -32,9 +32,9 @@ The client **never** communicates directly with OpenAI. All AI requests go throu
 
 Stored as `role` field in Firestore per user. Controls permissions and navigation flows:
 
-* `DOG_OWNER`
-* `SERVICE_PROVIDER`
-* `ADMIN`
+* `DOG_OWNER` — sees: My Dogs, Reminders, Meetups, AI Chat
+* `SERVICE_PROVIDER` — sees: My Profile, Service Requests, My Schedule
+* `ADMIN` — future
 
 ## Core Data Models (Firestore)
 
@@ -59,19 +59,69 @@ Core features must work **independently** of AI availability.
 
 ## App Architecture Layers
 
+```
 UI (Compose Screens)
-↓
+        ↓
 ViewModel (state management)
-↓
+        ↓
 Repository (Firebase + backend API)
-↓
+        ↓
 Data Models
+```
+
+## Package Structure
+
+```
+com/example/pet4you/
+├── data/model/
+│   ├── User.kt          (+ UserRole constants: DOG_OWNER, SERVICE_PROVIDER, ADMIN)
+│   ├── Dog.kt
+│   ├── Reminder.kt      (+ ReminderStatus constants)
+│   └── Meetup.kt
+├── repository/
+│   └── AuthRepository.kt  (login, register, logout, getUserRole)
+├── viewmodel/
+│   └── AuthViewModel.kt   (AuthState: Idle/Loading/Success(role)/Error)
+├── ui/
+│   ├── auth/
+│   │   ├── LoginScreen.kt
+│   │   └── RegisterScreen.kt
+│   ├── home/
+│   │   ├── DogOwnerHomeScreen.kt       (placeholder cards)
+│   │   ├── ServiceProviderHomeScreen.kt (placeholder cards)
+│   │   └── HomeScreen.kt               (unused — can be deleted)
+│   ├── splash/
+│   │   └── SplashScreen.kt  (checks auth + fetches role → navigates)
+│   ├── navigation/
+│   │   └── NavGraph.kt      (Routes: splash/login/register/dog_owner_home/service_provider_home)
+│   └── theme/
+│       ├── Color.kt, Theme.kt, Type.kt
+└── MainActivity.kt  (always starts at Routes.SPLASH)
+```
+
+## Navigation Flow
+
+```
+App opens → SplashScreen → checks Firebase Auth
+                ↓                     ↓
+           not logged in          logged in
+                ↓                     ↓
+           LoginScreen     fetch role from Firestore
+                ↓                     ↓
+           RegisterScreen    DOG_OWNER → DogOwnerHomeScreen
+           (role selection)  SERVICE_PROVIDER → ServiceProviderHomeScreen
+```
 
 ## Git Workflow
 
 * `main` = stable branch
-* Each feature = separate branch
-* Pull → branch → develop → commit → push → PR → merge
+* Each feature = separate branch from main
+* Pull → branch → develop → commit → push → PR → merge to main
+
+**Tools:**
+- Android app → **Android Studio**
+- Backend → **Visual Studio Code**
+- GitHub: `https://github.com/NirDor16/Pet4You.git`
 
 ## Important Development Rules
 
@@ -87,19 +137,68 @@ Data Models
 
 ## Current Development Focus
 
-We are currently at the **initial development stage**.
+**Android — Feature implementation stage**
 
-The Android project has been created and connected to GitHub, but no features are implemented yet.
+The foundation (auth, navigation, role-based routing) is complete.
+The next step is implementing actual features, starting with **Dog Profile Management (CRUD)** for DOG_OWNER.
+
+## What's Done ✅
+
+* Project created in Android Studio (Kotlin + Jetpack Compose)
+* Connected to GitHub, working on branch `feature/project-setup`
+* Firebase configured (google-services.json in app/)
+* Firebase Auth + Firestore dependencies added
+* Navigation Compose + ViewModel dependencies added
+* Data models: User, Dog, Reminder, Meetup
+* AuthRepository: login, register, logout, getUserRole
+* AuthViewModel: login(), register(), AuthState with role
+* LoginScreen + RegisterScreen (with role selection chips)
+* SplashScreen: checks auth and fetches role → routes correctly
+* NavGraph: role-based routing (DOG_OWNER / SERVICE_PROVIDER)
+* DogOwnerHomeScreen (placeholder — cards with no functionality yet)
+* ServiceProviderHomeScreen (placeholder — cards with no functionality yet)
+
+## What's NOT Done Yet ❌ (Next Steps)
+
+### Immediate — before merging to main:
+1. **Merge `feature/project-setup` → `main`** via Pull Request on GitHub
+
+### Next features to implement (in order):
+
+**For DOG_OWNER:**
+2. **Dog Profile CRUD** — add/edit/delete dogs, list dogs screen
+   - Needs: `DogRepository.kt`, `DogViewModel.kt`, `DogListScreen.kt`, `AddEditDogScreen.kt`
+3. **Reminders CRUD** — add/edit/delete reminders per dog
+   - Needs: `ReminderRepository.kt`, `ReminderViewModel.kt`, screens
+4. **Meetups** — create, search, join meetups
+   - Needs: `MeetupRepository.kt`, `MeetupViewModel.kt`, screens
+
+**For SERVICE_PROVIDER:**
+5. **Service Provider Profile** — create/edit provider profile
+6. **Service Requests** — view and manage incoming requests
+
+**Shared:**
+7. **AI Chat** — text input → HTTP to backend → response displayed
+   - Backend must be running first (Python/Flask on Render)
+8. **Backend setup** (separate — Visual Studio Code)
 
 ## Project History & Status
 
 ### 2026-04-11 — Initial Setup
-
-* Created Android project (Pet4You) in Android Studio
-* Initialized git repository and connected to GitHub
+* Created Android project in Android Studio
+* Connected to GitHub
 * Pushed initial commit (Compose starter project)
-* Defined architecture and features
+* Defined full project architecture
+
+### 2026-04-11 — Foundation Complete
+* Added all dependencies (Firebase, Navigation, ViewModel)
+* Created full package structure (MVVM)
+* Implemented data models (User, Dog, Reminder, Meetup)
+* Implemented Auth (login, register, logout, role-based navigation)
+* SplashScreen with auth guard
+* Home screen placeholders per role
+* Branch: `feature/project-setup` — **not yet merged to main**
 
 ---
 
-> Update this file after every milestone.
+> Update this file after every milestone. Add to "What's Done", remove from "What's NOT Done", and add a new entry to Project History.
