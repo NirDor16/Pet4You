@@ -92,11 +92,6 @@ We are currently at the **initial development stage**.
 
 The Android project has been created and connected to GitHub, but no features are implemented yet.
 
-We will start by implementing:
-
-1. Firebase Authentication (Register/Login)
-2. User model with roles
-3. Navigation based on user role
 
 ## Project History & Status
 
