@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "589952220735",
+    "project_id": "pet4you-54f7c",
+    "storage_bucket": "pet4you-54f7c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:589952220735:android:7c562b4857a0e33c3bc28a",
+        "android_client_info": {
+          "package_name": "com.example.pet4you"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyADSi6z2V-D1NGN5TnPDSJBpaX5lZzii2o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
