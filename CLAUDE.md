@@ -158,13 +158,14 @@ App opens → SplashScreen → checks Firebase Auth
 * DogOwnerHomeScreen (placeholder)
 * ServiceProviderHomeScreen (placeholder)
 * PR #1 merged to master ✅
-* Branch `feature/data-models-fix` in progress
+* PR #2 merged to master ✅ (data-models-fix)
+* Branch `feature/dog-profiles` complete — PR open, pending merge
 
 ## What's NOT Done Yet ❌ — Feature Roadmap
 
 | Branch | Feature | Who |
 |--------|---------|-----|
-| `feature/dog-profiles` | Dog CRUD (list, add, edit, delete) | DOG_OWNER |
+| `feature/dog-profiles` | Dog CRUD (list, add, edit, delete) | DOG_OWNER ✅ PR open |
 | `feature/reminders` | Reminder CRUD per dog | DOG_OWNER |
 | `feature/meetups` | Create, browse, join meetups | DOG_OWNER |
 | `feature/service-provider-profile` | Edit provider profile | SERVICE_PROVIDER |
@@ -174,13 +175,13 @@ App opens → SplashScreen → checks Firebase Auth
 | future | Admin: block/unblock users | ADMIN |
 | future | AI Chat | Both (via backend) |
 
-### Next to build: `feature/dog-profiles`
+### Next to build: `feature/reminders`
 Files needed:
-- `repository/DogRepository.kt`
-- `viewmodel/DogViewModel.kt`
-- `ui/dog/DogListScreen.kt`
-- `ui/dog/AddEditDogScreen.kt`
-- Wire "My Dogs" card in DogOwnerHomeScreen to DogListScreen
+- `repository/ReminderRepository.kt`
+- `viewmodel/ReminderViewModel.kt`
+- `ui/reminder/ReminderListScreen.kt`
+- `ui/reminder/AddEditReminderScreen.kt`
+- Wire "Reminders" card in DogOwnerHomeScreen to ReminderListScreen
 
 ## Project History & Status
 
@@ -197,6 +198,15 @@ Files needed:
 * Updated RegisterScreen to capture providerType for SERVICE_PROVIDER
 * Updated AuthRepository to create serviceProviders Firestore doc on register
 * Corrected full system interaction model in CLAUDE.md
+
+### 2026-04-12 — Dog Profiles Feature (feature/dog-profiles)
+* DogRepository: full Firestore CRUD for "dogs" collection
+* DogViewModel: DogListState + DogActionState sealed classes
+* DogListScreen: LazyColumn with edit/delete icons per dog, FAB to add
+* AddEditDogScreen: unified add/edit form with Firestore pre-fill in edit mode
+* DogOwnerHomeScreen: "My Dogs" card wired to DogListScreen
+* NavGraph: dog_list + add_edit_dog routes added
+* Added material-icons-extended dependency
 
 ---
 
