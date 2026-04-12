@@ -15,6 +15,7 @@ Full **Client-Server** architecture:
 * **Auth**: Firebase Authentication
 
 The client **never** communicates directly with OpenAI. All AI requests go through the backend.
+All core features must work **independently** of AI availability.
 
 ## Tech Stack
 
@@ -30,32 +31,41 @@ The client **never** communicates directly with OpenAI. All AI requests go throu
 
 ## User Roles
 
-Stored as `role` field in Firestore per user. Controls permissions and navigation flows:
+Stored as `role` field in Firestore per user:
 
-* `DOG_OWNER` — sees: My Dogs, Reminders, Meetups, AI Chat
-* `SERVICE_PROVIDER` — sees: My Profile, Service Requests, My Schedule
-* `ADMIN` — future
+* `DOG_OWNER` — browses providers, sends service requests, manages dogs/reminders/meetups
+* `SERVICE_PROVIDER` — receives and manages incoming service requests, manages own profile
+* `ADMIN` — manages users (block/unblock), future feature
+
+## Interaction Model (Asymmetric)
+
+**DOG_OWNER initiates, SERVICE_PROVIDER responds — never the other way around.**
+
+```
+DOG_OWNER:
+  Browse providers → filter by type (VET/DOG_SITTER/GROOMER) → view profile → send request
+
+SERVICE_PROVIDER:
+  View incoming requests → approve or reject
+```
+
+## Service Provider Types
+
+SERVICE_PROVIDER has a `providerType` field stored in both `users` and `serviceProviders` collections:
+* `VET` — Veterinarian
+* `DOG_SITTER` — Dog Sitter
+* `GROOMER` — Groomer
+
+All provider types share the same UI, but providerType is used for filtering and display.
 
 ## Core Data Models (Firestore)
 
 * **users**: uid, fullName, email, role, isBlocked, createdAt
 * **dogs**: dogId, ownerId, name, breed, birthDate, notes
-* **reminders**: reminderId, dogId, type, dateTime, frequency, status
-* **meetups**: meetupId, creatorId, location, dateTime, description, participants[]
-* **serviceProviders** (future)
-* **serviceRequests** (future)
-
-## Features
-
-* Auth (Firebase Authentication)
-* Dog profile management (CRUD)
-* Reminders (CRUD)
-* Social meetups (create, search, join)
-* Service provider system (future)
-* AI Chat (via backend → OpenAI)
-* Recommendation system (future)
-
-Core features must work **independently** of AI availability.
+* **reminders**: reminderId, dogId, type, dateTime, frequency, status (ACTIVE/DONE)
+* **meetups**: meetupId, creatorId, location, dateTime, description, participants[], dogBreeds[]
+* **serviceProviders**: serviceProviderId (=uid), providerType, fullName, email, description, location, isAvailable, createdAt
+* **serviceRequests**: requestId, dogOwnerId, serviceProviderId, dogId, providerType, message, status (PENDING/APPROVED/REJECTED), createdAt
 
 ## App Architecture Layers
 
@@ -74,29 +84,30 @@ Data Models
 ```
 com/example/pet4you/
 ├── data/model/
-│   ├── User.kt          (+ UserRole constants: DOG_OWNER, SERVICE_PROVIDER, ADMIN)
+│   ├── User.kt            (+ UserRole: DOG_OWNER, SERVICE_PROVIDER, ADMIN)
 │   ├── Dog.kt
-│   ├── Reminder.kt      (+ ReminderStatus constants)
-│   └── Meetup.kt
+│   ├── Reminder.kt        (+ ReminderStatus: ACTIVE, DONE)
+│   ├── Meetup.kt          (includes dogBreeds[] for future matching)
+│   ├── ServiceProvider.kt (+ ProviderType: VET, DOG_SITTER, GROOMER)
+│   └── ServiceRequest.kt  (+ RequestStatus: PENDING, APPROVED, REJECTED)
 ├── repository/
-│   └── AuthRepository.kt  (login, register, logout, getUserRole)
+│   └── AuthRepository.kt  (login, register[+providerType], logout, getUserRole)
 ├── viewmodel/
 │   └── AuthViewModel.kt   (AuthState: Idle/Loading/Success(role)/Error)
 ├── ui/
 │   ├── auth/
 │   │   ├── LoginScreen.kt
-│   │   └── RegisterScreen.kt
+│   │   └── RegisterScreen.kt  (role + providerType selection)
 │   ├── home/
-│   │   ├── DogOwnerHomeScreen.kt       (placeholder cards)
+│   │   ├── DogOwnerHomeScreen.kt        (placeholder cards)
 │   │   ├── ServiceProviderHomeScreen.kt (placeholder cards)
-│   │   └── HomeScreen.kt               (unused — can be deleted)
+│   │   └── HomeScreen.kt               (unused)
 │   ├── splash/
-│   │   └── SplashScreen.kt  (checks auth + fetches role → navigates)
+│   │   └── SplashScreen.kt
 │   ├── navigation/
-│   │   └── NavGraph.kt      (Routes: splash/login/register/dog_owner_home/service_provider_home)
+│   │   └── NavGraph.kt
 │   └── theme/
-│       ├── Color.kt, Theme.kt, Type.kt
-└── MainActivity.kt  (always starts at Routes.SPLASH)
+└── MainActivity.kt
 ```
 
 ## Navigation Flow
@@ -104,19 +115,19 @@ com/example/pet4you/
 ```
 App opens → SplashScreen → checks Firebase Auth
                 ↓                     ↓
-           not logged in          logged in
-                ↓                     ↓
-           LoginScreen     fetch role from Firestore
-                ↓                     ↓
-           RegisterScreen    DOG_OWNER → DogOwnerHomeScreen
-           (role selection)  SERVICE_PROVIDER → ServiceProviderHomeScreen
+           not logged in          logged in → fetch role → home screen
+                ↓
+           LoginScreen ↔ RegisterScreen
+                ↓
+   DOG_OWNER → DogOwnerHomeScreen
+   SERVICE_PROVIDER → ServiceProviderHomeScreen
 ```
 
 ## Git Workflow
 
-* `main` = stable branch
-* Each feature = separate branch from main
-* Pull → branch → develop → commit → push → PR → merge to main
+* `master` = stable branch
+* Each feature = separate branch from master
+* Pull → branch → develop → commit → push → PR → merge to master
 
 **Tools:**
 - Android app → **Android Studio**
@@ -130,75 +141,63 @@ App opens → SplashScreen → checks Firebase Auth
 * Follow MVVM architecture for Android components
 * Use proper data models and avoid hardcoded values
 * Keep separation of concerns (UI / ViewModel / Repository / Data)
-* Prefer reusable and maintainable solutions over quick fixes
 * Do not assume missing requirements — ask for clarification if needed
 * When working on a specific layer, do not implement other layers unless explicitly requested
-* Ensure all code aligns with the overall system architecture described above
-
-## Current Development Focus
-
-**Android — Feature implementation stage**
-
-The foundation (auth, navigation, role-based routing) is complete.
-The next step is implementing actual features, starting with **Dog Profile Management (CRUD)** for DOG_OWNER.
+* AI is supplementary — never make core features depend on AI availability
 
 ## What's Done ✅
 
-* Project created in Android Studio (Kotlin + Jetpack Compose)
-* Connected to GitHub, working on branch `feature/project-setup`
-* Firebase configured (google-services.json in app/)
-* Firebase Auth + Firestore dependencies added
-* Navigation Compose + ViewModel dependencies added
-* Data models: User, Dog, Reminder, Meetup
-* AuthRepository: login, register, logout, getUserRole
-* AuthViewModel: login(), register(), AuthState with role
-* LoginScreen + RegisterScreen (with role selection chips)
-* SplashScreen: checks auth and fetches role → routes correctly
-* NavGraph: role-based routing (DOG_OWNER / SERVICE_PROVIDER)
-* DogOwnerHomeScreen (placeholder — cards with no functionality yet)
-* ServiceProviderHomeScreen (placeholder — cards with no functionality yet)
+* Firebase Auth + Firestore + Navigation dependencies
+* Full MVVM package structure
+* Data models: User, Dog, Reminder, Meetup, ServiceProvider, ServiceRequest
+* AuthRepository: login, register (with providerType), logout, getUserRole
+* RegisterScreen: role selection + providerType selection for SERVICE_PROVIDER
+* LoginScreen
+* SplashScreen: auth guard + role-based routing
+* NavGraph: routes splash/login/register/dog_owner_home/service_provider_home
+* DogOwnerHomeScreen (placeholder)
+* ServiceProviderHomeScreen (placeholder)
+* PR #1 merged to master ✅
+* Branch `feature/data-models-fix` in progress
 
-## What's NOT Done Yet ❌ (Next Steps)
+## What's NOT Done Yet ❌ — Feature Roadmap
 
-### Next features to implement (in order):
+| Branch | Feature | Who |
+|--------|---------|-----|
+| `feature/dog-profiles` | Dog CRUD (list, add, edit, delete) | DOG_OWNER |
+| `feature/reminders` | Reminder CRUD per dog | DOG_OWNER |
+| `feature/meetups` | Create, browse, join meetups | DOG_OWNER |
+| `feature/service-provider-profile` | Edit provider profile | SERVICE_PROVIDER |
+| `feature/service-requests` | Browse providers + send request | DOG_OWNER |
+| `feature/service-requests` | View + approve/reject requests | SERVICE_PROVIDER |
+| future | Meetup recommendation algorithm | Backend |
+| future | Admin: block/unblock users | ADMIN |
+| future | AI Chat | Both (via backend) |
 
-**For DOG_OWNER:**
-1. **Dog Profile CRUD** — add/edit/delete dogs, list dogs screen
-   - Needs: `DogRepository.kt`, `DogViewModel.kt`, `DogListScreen.kt`, `AddEditDogScreen.kt`
-   - Branch to create: `feature/dog-profiles`
-2. **Reminders CRUD** — add/edit/delete reminders per dog
-   - Needs: `ReminderRepository.kt`, `ReminderViewModel.kt`, screens
-   - Branch to create: `feature/reminders`
-3. **Meetups** — create, search, join meetups
-   - Needs: `MeetupRepository.kt`, `MeetupViewModel.kt`, screens
-   - Branch to create: `feature/meetups`
-
-**For SERVICE_PROVIDER:**
-5. **Service Provider Profile** — create/edit provider profile
-6. **Service Requests** — view and manage incoming requests
-
-**Shared:**
-7. **AI Chat** — text input → HTTP to backend → response displayed
-   - Backend must be running first (Python/Flask on Render)
-8. **Backend setup** (separate — Visual Studio Code)
+### Next to build: `feature/dog-profiles`
+Files needed:
+- `repository/DogRepository.kt`
+- `viewmodel/DogViewModel.kt`
+- `ui/dog/DogListScreen.kt`
+- `ui/dog/AddEditDogScreen.kt`
+- Wire "My Dogs" card in DogOwnerHomeScreen to DogListScreen
 
 ## Project History & Status
 
 ### 2026-04-11 — Initial Setup
-* Created Android project in Android Studio
-* Connected to GitHub
-* Pushed initial commit (Compose starter project)
-* Defined full project architecture
+* Created Android project, connected to GitHub
 
-### 2026-04-11 — Foundation Complete ✅ (merged to main)
-* Added all dependencies (Firebase, Navigation, ViewModel)
-* Created full package structure (MVVM)
-* Implemented data models (User, Dog, Reminder, Meetup)
-* Implemented Auth (login, register, logout, role-based navigation)
-* SplashScreen with auth guard
-* Home screen placeholders per role (DogOwnerHomeScreen, ServiceProviderHomeScreen)
-* PR #1 merged to master — master is stable and up to date
+### 2026-04-11 — Foundation Complete (PR #1 → master)
+* Dependencies, MVVM structure, Auth, role-based navigation
+
+### 2026-04-12 — Data Models + Requirements Aligned (feature/data-models-fix)
+* Added ServiceProvider.kt (+ ProviderType constants)
+* Added ServiceRequest.kt (+ RequestStatus constants)
+* Updated Meetup.kt with dogBreeds[]
+* Updated RegisterScreen to capture providerType for SERVICE_PROVIDER
+* Updated AuthRepository to create serviceProviders Firestore doc on register
+* Corrected full system interaction model in CLAUDE.md
 
 ---
 
-> Update this file after every milestone. Add to "What's Done", remove from "What's NOT Done", and add a new entry to Project History.
+> Update this file after every milestone.

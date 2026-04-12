@@ -6,5 +6,6 @@ data class Meetup(
     val location: String = "",
     val dateTime: Long = 0L,
     val description: String = "",
-    val participants: List<String> = emptyList()
+    val participants: List<String> = emptyList(),
+    val dogBreeds: List<String> = emptyList()
 )
