@@ -15,6 +15,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             Pet4YouTheme {
+
                 val navController = rememberNavController()
                 NavGraph(navController = navController, startDestination = Routes.SPLASH)
             }

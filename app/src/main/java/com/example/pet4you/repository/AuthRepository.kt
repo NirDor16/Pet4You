@@ -1,6 +1,8 @@
 package com.example.pet4you.repository
 
+import com.example.pet4you.data.model.ServiceProvider
 import com.example.pet4you.data.model.User
+import com.example.pet4you.data.model.UserRole
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.FirebaseFirestore
@@ -32,10 +34,17 @@ class AuthRepository {
         }
     }
 
-    suspend fun register(fullName: String, email: String, password: String, role: String): Result<FirebaseUser> {
+    suspend fun register(
+        fullName: String,
+        email: String,
+        password: String,
+        role: String,
+        providerType: String? = null
+    ): Result<FirebaseUser> {
         return try {
             val result = auth.createUserWithEmailAndPassword(email, password).await()
             val user = result.user!!
+
             val userDoc = User(
                 uid = user.uid,
                 fullName = fullName,
@@ -43,6 +52,17 @@ class AuthRepository {
                 role = role
             )
             firestore.collection("users").document(user.uid).set(userDoc).await()
+
+            if (role == UserRole.SERVICE_PROVIDER && providerType != null) {
+                val providerDoc = ServiceProvider(
+                    serviceProviderId = user.uid,
+                    providerType = providerType,
+                    fullName = fullName,
+                    email = email
+                )
+                firestore.collection("serviceProviders").document(user.uid).set(providerDoc).await()
+            }
+
             Result.success(user)
         } catch (e: Exception) {
             Result.failure(e)

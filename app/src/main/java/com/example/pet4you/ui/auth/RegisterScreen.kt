@@ -10,6 +10,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.pet4you.data.model.ProviderType
 import com.example.pet4you.data.model.UserRole
 import com.example.pet4you.viewmodel.AuthState
 import com.example.pet4you.viewmodel.AuthViewModel
@@ -24,6 +25,7 @@ fun RegisterScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var selectedRole by remember { mutableStateOf(UserRole.DOG_OWNER) }
+    var selectedProviderType by remember { mutableStateOf(ProviderType.VET) }
 
     val authState by authViewModel.authState.collectAsState()
 
@@ -97,6 +99,25 @@ fun RegisterScreen(
             )
         }
 
+        if (selectedRole == UserRole.SERVICE_PROVIDER) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Text("Type of service:", style = MaterialTheme.typography.bodyMedium)
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                ProviderType.all.forEach { type ->
+                    FilterChip(
+                        selected = selectedProviderType == type,
+                        onClick = { selectedProviderType = type },
+                        label = { Text(ProviderType.displayName(type)) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+        }
+
         Spacer(modifier = Modifier.height(24.dp))
 
         if (authState is AuthState.Error) {
@@ -109,7 +130,10 @@ fun RegisterScreen(
         }
 
         Button(
-            onClick = { authViewModel.register(fullName, email, password, selectedRole) },
+            onClick = {
+                val providerType = if (selectedRole == UserRole.SERVICE_PROVIDER) selectedProviderType else null
+                authViewModel.register(fullName, email, password, selectedRole, providerType)
+            },
             enabled = authState !is AuthState.Loading,
             modifier = Modifier.fillMaxWidth()
         ) {
