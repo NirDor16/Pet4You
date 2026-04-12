@@ -3,11 +3,15 @@ package com.example.pet4you.ui.navigation
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.example.pet4you.data.model.UserRole
 import com.example.pet4you.ui.auth.LoginScreen
 import com.example.pet4you.ui.auth.RegisterScreen
+import com.example.pet4you.ui.dog.AddEditDogScreen
+import com.example.pet4you.ui.dog.DogListScreen
 import com.example.pet4you.ui.home.DogOwnerHomeScreen
 import com.example.pet4you.ui.home.ServiceProviderHomeScreen
 import com.example.pet4you.ui.splash.SplashScreen
@@ -19,6 +23,8 @@ object Routes {
     const val REGISTER = "register"
     const val DOG_OWNER_HOME = "dog_owner_home"
     const val SERVICE_PROVIDER_HOME = "service_provider_home"
+    const val DOG_LIST = "dog_list"
+    const val ADD_EDIT_DOG = "add_edit_dog?dogId={dogId}"
 }
 
 fun homeRouteForRole(role: String): String {
@@ -82,6 +88,9 @@ fun NavGraph(
                     navController.navigate(Routes.LOGIN) {
                         popUpTo(Routes.DOG_OWNER_HOME) { inclusive = true }
                     }
+                },
+                onNavigateToDogs = {
+                    navController.navigate(Routes.DOG_LIST)
                 }
             )
         }
@@ -94,6 +103,31 @@ fun NavGraph(
                         popUpTo(Routes.SERVICE_PROVIDER_HOME) { inclusive = true }
                     }
                 }
+            )
+        }
+
+        composable(Routes.DOG_LIST) {
+            DogListScreen(
+                onNavigateToAdd = { navController.navigate("add_edit_dog") },
+                onNavigateToEdit = { dogId -> navController.navigate("add_edit_dog?dogId=$dogId") },
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = Routes.ADD_EDIT_DOG,
+            arguments = listOf(
+                navArgument("dogId") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            )
+        ) { backStackEntry ->
+            val dogId = backStackEntry.arguments?.getString("dogId")
+            AddEditDogScreen(
+                dogId = dogId,
+                onNavigateBack = { navController.popBackStack() }
             )
         }
     }

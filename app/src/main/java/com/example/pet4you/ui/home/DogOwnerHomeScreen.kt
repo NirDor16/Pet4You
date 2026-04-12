@@ -1,5 +1,6 @@
 package com.example.pet4you.ui.home
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -8,7 +9,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun DogOwnerHomeScreen(onLogout: () -> Unit) {
+fun DogOwnerHomeScreen(
+    onLogout: () -> Unit,
+    onNavigateToDogs: () -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -22,8 +26,7 @@ fun DogOwnerHomeScreen(onLogout: () -> Unit) {
 
         Spacer(modifier = Modifier.height(32.dp))
 
-        // Placeholders — features coming soon
-        Card(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
+        Card(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp).clickable { onNavigateToDogs() }) {
             Text("My Dogs", modifier = Modifier.padding(16.dp))
         }
         Card(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
