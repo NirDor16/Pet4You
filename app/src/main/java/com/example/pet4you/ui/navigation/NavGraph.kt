@@ -14,6 +14,8 @@ import com.example.pet4you.ui.dog.AddEditDogScreen
 import com.example.pet4you.ui.dog.DogListScreen
 import com.example.pet4you.ui.home.DogOwnerHomeScreen
 import com.example.pet4you.ui.home.ServiceProviderHomeScreen
+import com.example.pet4you.ui.meetup.CreateMeetupScreen
+import com.example.pet4you.ui.meetup.MeetupListScreen
 import com.example.pet4you.ui.splash.SplashScreen
 import com.example.pet4you.viewmodel.AuthViewModel
 
@@ -25,6 +27,8 @@ object Routes {
     const val SERVICE_PROVIDER_HOME = "service_provider_home"
     const val DOG_LIST = "dog_list"
     const val ADD_EDIT_DOG = "add_edit_dog?dogId={dogId}"
+    const val MEETUP_LIST = "meetup_list"
+    const val CREATE_MEETUP = "create_meetup"
 }
 
 fun homeRouteForRole(role: String): String {
@@ -91,6 +95,9 @@ fun NavGraph(
                 },
                 onNavigateToDogs = {
                     navController.navigate(Routes.DOG_LIST)
+                },
+                onNavigateToMeetups = {
+                    navController.navigate(Routes.MEETUP_LIST)
                 }
             )
         }
@@ -127,6 +134,19 @@ fun NavGraph(
             val dogId = backStackEntry.arguments?.getString("dogId")
             AddEditDogScreen(
                 dogId = dogId,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Routes.MEETUP_LIST) {
+            MeetupListScreen(
+                onNavigateToCreate = { navController.navigate(Routes.CREATE_MEETUP) },
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Routes.CREATE_MEETUP) {
+            CreateMeetupScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }

@@ -11,7 +11,8 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun DogOwnerHomeScreen(
     onLogout: () -> Unit,
-    onNavigateToDogs: () -> Unit
+    onNavigateToDogs: () -> Unit,
+    onNavigateToMeetups: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -32,7 +33,7 @@ fun DogOwnerHomeScreen(
         Card(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
             Text("Reminders", modifier = Modifier.padding(16.dp))
         }
-        Card(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
+        Card(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp).clickable { onNavigateToMeetups() }) {
             Text("Meetups", modifier = Modifier.padding(16.dp))
         }
         Card(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
