@@ -14,6 +14,8 @@ import com.example.pet4you.ui.dog.AddEditDogScreen
 import com.example.pet4you.ui.dog.DogListScreen
 import com.example.pet4you.ui.home.DogOwnerHomeScreen
 import com.example.pet4you.ui.home.ServiceProviderHomeScreen
+import com.example.pet4you.ui.meetup.CreateMeetupScreen
+import com.example.pet4you.ui.meetup.MeetupListScreen
 import com.example.pet4you.ui.reminder.AddEditReminderScreen
 import com.example.pet4you.ui.reminder.ReminderListScreen
 import com.example.pet4you.ui.splash.SplashScreen
@@ -29,6 +31,8 @@ object Routes {
     const val ADD_EDIT_DOG = "add_edit_dog?dogId={dogId}"
     const val REMINDER_LIST = "reminder_list"
     const val ADD_EDIT_REMINDER = "add_edit_reminder?reminderId={reminderId}"
+    const val MEETUP_LIST = "meetup_list"
+    const val CREATE_MEETUP = "create_meetup"
 }
 
 fun homeRouteForRole(role: String): String {
@@ -98,6 +102,9 @@ fun NavGraph(
                 },
                 onNavigateToReminders = {
                     navController.navigate(Routes.REMINDER_LIST)
+                },
+                onNavigateToMeetups = {
+                    navController.navigate(Routes.MEETUP_LIST)
                 }
             )
         }
@@ -159,6 +166,19 @@ fun NavGraph(
             val reminderId = backStackEntry.arguments?.getString("reminderId")
             AddEditReminderScreen(
                 reminderId = reminderId,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Routes.MEETUP_LIST) {
+            MeetupListScreen(
+                onNavigateToCreate = { navController.navigate(Routes.CREATE_MEETUP) },
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Routes.CREATE_MEETUP) {
+            CreateMeetupScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }
