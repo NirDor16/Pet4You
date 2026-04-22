@@ -14,6 +14,8 @@ import com.example.pet4you.ui.dog.AddEditDogScreen
 import com.example.pet4you.ui.dog.DogListScreen
 import com.example.pet4you.ui.home.DogOwnerHomeScreen
 import com.example.pet4you.ui.home.ServiceProviderHomeScreen
+import com.example.pet4you.ui.reminder.AddEditReminderScreen
+import com.example.pet4you.ui.reminder.ReminderListScreen
 import com.example.pet4you.ui.splash.SplashScreen
 import com.example.pet4you.viewmodel.AuthViewModel
 
@@ -25,6 +27,8 @@ object Routes {
     const val SERVICE_PROVIDER_HOME = "service_provider_home"
     const val DOG_LIST = "dog_list"
     const val ADD_EDIT_DOG = "add_edit_dog?dogId={dogId}"
+    const val REMINDER_LIST = "reminder_list"
+    const val ADD_EDIT_REMINDER = "add_edit_reminder?reminderId={reminderId}"
 }
 
 fun homeRouteForRole(role: String): String {
@@ -91,6 +95,9 @@ fun NavGraph(
                 },
                 onNavigateToDogs = {
                     navController.navigate(Routes.DOG_LIST)
+                },
+                onNavigateToReminders = {
+                    navController.navigate(Routes.REMINDER_LIST)
                 }
             )
         }
@@ -127,6 +134,31 @@ fun NavGraph(
             val dogId = backStackEntry.arguments?.getString("dogId")
             AddEditDogScreen(
                 dogId = dogId,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Routes.REMINDER_LIST) {
+            ReminderListScreen(
+                onNavigateToAdd = { navController.navigate("add_edit_reminder") },
+                onNavigateToEdit = { reminderId -> navController.navigate("add_edit_reminder?reminderId=$reminderId") },
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = Routes.ADD_EDIT_REMINDER,
+            arguments = listOf(
+                navArgument("reminderId") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            )
+        ) { backStackEntry ->
+            val reminderId = backStackEntry.arguments?.getString("reminderId")
+            AddEditReminderScreen(
+                reminderId = reminderId,
                 onNavigateBack = { navController.popBackStack() }
             )
         }
