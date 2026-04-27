@@ -18,6 +18,9 @@ import com.example.pet4you.ui.meetup.CreateMeetupScreen
 import com.example.pet4you.ui.meetup.MeetupListScreen
 import com.example.pet4you.ui.reminder.AddEditReminderScreen
 import com.example.pet4you.ui.reminder.ReminderListScreen
+import com.example.pet4you.ui.serviceprovider.BrowseProvidersScreen
+import com.example.pet4you.ui.serviceprovider.IncomingRequestsScreen
+import com.example.pet4you.ui.serviceprovider.ProviderDetailScreen
 import com.example.pet4you.ui.serviceprovider.ServiceProviderProfileScreen
 import com.example.pet4you.ui.splash.SplashScreen
 import com.example.pet4you.viewmodel.AuthViewModel
@@ -35,6 +38,9 @@ object Routes {
     const val MEETUP_LIST = "meetup_list"
     const val CREATE_MEETUP = "create_meetup"
     const val PROVIDER_PROFILE = "provider_profile"
+    const val BROWSE_PROVIDERS = "browse_providers"
+    const val PROVIDER_DETAIL = "provider_detail/{providerId}"
+    const val INCOMING_REQUESTS = "incoming_requests"
 }
 
 fun homeRouteForRole(role: String): String {
@@ -107,6 +113,9 @@ fun NavGraph(
                 },
                 onNavigateToMeetups = {
                     navController.navigate(Routes.MEETUP_LIST)
+                },
+                onNavigateToProviders = {
+                    navController.navigate(Routes.BROWSE_PROVIDERS)
                 }
             )
         }
@@ -121,12 +130,43 @@ fun NavGraph(
                 },
                 onNavigateToProfile = {
                     navController.navigate(Routes.PROVIDER_PROFILE)
+                },
+                onNavigateToRequests = {
+                    navController.navigate(Routes.INCOMING_REQUESTS)
                 }
             )
         }
 
         composable(Routes.PROVIDER_PROFILE) {
             ServiceProviderProfileScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Routes.BROWSE_PROVIDERS) {
+            BrowseProvidersScreen(
+                onNavigateToDetail = { providerId ->
+                    navController.navigate("provider_detail/$providerId")
+                },
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = Routes.PROVIDER_DETAIL,
+            arguments = listOf(
+                navArgument("providerId") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val providerId = backStackEntry.arguments?.getString("providerId") ?: return@composable
+            ProviderDetailScreen(
+                providerId = providerId,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Routes.INCOMING_REQUESTS) {
+            IncomingRequestsScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }
