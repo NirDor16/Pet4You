@@ -11,7 +11,8 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun ServiceProviderHomeScreen(
     onLogout: () -> Unit,
-    onNavigateToProfile: () -> Unit
+    onNavigateToProfile: () -> Unit,
+    onNavigateToRequests: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -29,7 +30,7 @@ fun ServiceProviderHomeScreen(
         Card(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp).clickable { onNavigateToProfile() }) {
             Text("My Profile", modifier = Modifier.padding(16.dp))
         }
-        Card(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
+        Card(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp).clickable { onNavigateToRequests() }) {
             Text("Service Requests", modifier = Modifier.padding(16.dp))
         }
         Card(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
