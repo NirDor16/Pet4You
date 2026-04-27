@@ -29,6 +29,12 @@ All core features must work **independently** of AI availability.
 | AI              | OpenAI API (API key stored on backend only) |
 | Version Control | Git + GitHub                                |
 
+## UI / Theme Notes
+
+- Theme config: `ui/theme/Theme.kt` — `dynamicColor = false`, explicit `LightColorScheme` with `onSurface = Color(0xFF1C1B1F)`
+- TextField text color across the app comes from `colorScheme.onSurface` (Material3) — no per-field override needed
+- Do NOT re-enable `dynamicColor` — it causes TextField text to appear white on Android 12+ devices
+
 ## User Roles
 
 Stored as `role` field in Firestore per user:
