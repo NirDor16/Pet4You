@@ -18,6 +18,7 @@ import com.example.pet4you.ui.meetup.CreateMeetupScreen
 import com.example.pet4you.ui.meetup.MeetupListScreen
 import com.example.pet4you.ui.reminder.AddEditReminderScreen
 import com.example.pet4you.ui.reminder.ReminderListScreen
+import com.example.pet4you.ui.serviceprovider.ServiceProviderProfileScreen
 import com.example.pet4you.ui.splash.SplashScreen
 import com.example.pet4you.viewmodel.AuthViewModel
 
@@ -33,6 +34,7 @@ object Routes {
     const val ADD_EDIT_REMINDER = "add_edit_reminder?reminderId={reminderId}"
     const val MEETUP_LIST = "meetup_list"
     const val CREATE_MEETUP = "create_meetup"
+    const val PROVIDER_PROFILE = "provider_profile"
 }
 
 fun homeRouteForRole(role: String): String {
@@ -116,7 +118,16 @@ fun NavGraph(
                     navController.navigate(Routes.LOGIN) {
                         popUpTo(Routes.SERVICE_PROVIDER_HOME) { inclusive = true }
                     }
+                },
+                onNavigateToProfile = {
+                    navController.navigate(Routes.PROVIDER_PROFILE)
                 }
+            )
+        }
+
+        composable(Routes.PROVIDER_PROFILE) {
+            ServiceProviderProfileScreen(
+                onNavigateBack = { navController.popBackStack() }
             )
         }
 
