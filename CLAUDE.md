@@ -62,7 +62,7 @@ All provider types share the same UI, but providerType is used for filtering and
 
 * **users**: uid, fullName, email, role, isBlocked, createdAt
 * **dogs**: dogId, ownerId, name, breed, birthDate, notes
-* **reminders**: reminderId, dogId, type, dateTime, frequency, status (ACTIVE/DONE)
+* **reminders**: reminderId, ownerId, dogId, type, dateTime, frequency, status (ACTIVE/DONE)
 * **meetups**: meetupId, creatorId, location, dateTime, description, participants[], dogBreeds[]
 * **serviceProviders**: serviceProviderId (=uid), providerType, fullName, email, description, location, isAvailable, createdAt
 * **serviceRequests**: requestId, dogOwnerId, serviceProviderId, dogId, providerType, message, status (PENDING/APPROVED/REJECTED), createdAt
@@ -79,29 +79,54 @@ Repository (Firebase + backend API)
 Data Models
 ```
 
-## Package Structure
+## Package Structure (current)
 
 ```
 com/example/pet4you/
 ├── data/model/
 │   ├── User.kt            (+ UserRole: DOG_OWNER, SERVICE_PROVIDER, ADMIN)
 │   ├── Dog.kt
-│   ├── Reminder.kt        (+ ReminderStatus: ACTIVE, DONE)
+│   ├── Reminder.kt        (+ ReminderType, ReminderFrequency, ReminderStatus)
 │   ├── Meetup.kt          (includes dogBreeds[] for future matching)
 │   ├── ServiceProvider.kt (+ ProviderType: VET, DOG_SITTER, GROOMER)
 │   └── ServiceRequest.kt  (+ RequestStatus: PENDING, APPROVED, REJECTED)
 ├── repository/
-│   └── AuthRepository.kt  (login, register[+providerType], logout, getUserRole)
+│   ├── AuthRepository.kt
+│   ├── DogRepository.kt
+│   ├── ReminderRepository.kt
+│   ├── MeetupRepository.kt
+│   ├── ServiceProviderRepository.kt
+│   └── ServiceRequestRepository.kt
 ├── viewmodel/
-│   └── AuthViewModel.kt   (AuthState: Idle/Loading/Success(role)/Error)
+│   ├── AuthViewModel.kt
+│   ├── DogViewModel.kt
+│   ├── ReminderViewModel.kt
+│   ├── MeetupViewModel.kt
+│   ├── ServiceProviderViewModel.kt
+│   ├── BrowseProvidersViewModel.kt
+│   ├── ProviderDetailViewModel.kt
+│   └── IncomingRequestsViewModel.kt
 ├── ui/
 │   ├── auth/
 │   │   ├── LoginScreen.kt
 │   │   └── RegisterScreen.kt  (role + providerType selection)
 │   ├── home/
-│   │   ├── DogOwnerHomeScreen.kt        (placeholder cards)
-│   │   ├── ServiceProviderHomeScreen.kt (placeholder cards)
-│   │   └── HomeScreen.kt               (unused)
+│   │   ├── DogOwnerHomeScreen.kt
+│   │   └── ServiceProviderHomeScreen.kt
+│   ├── dog/
+│   │   ├── DogListScreen.kt
+│   │   └── AddEditDogScreen.kt
+│   ├── reminder/
+│   │   ├── ReminderListScreen.kt
+│   │   └── AddEditReminderScreen.kt
+│   ├── meetup/
+│   │   ├── MeetupListScreen.kt
+│   │   └── CreateMeetupScreen.kt
+│   ├── serviceprovider/
+│   │   ├── ServiceProviderProfileScreen.kt
+│   │   ├── BrowseProvidersScreen.kt
+│   │   ├── ProviderDetailScreen.kt
+│   │   └── IncomingRequestsScreen.kt
 │   ├── splash/
 │   │   └── SplashScreen.kt
 │   ├── navigation/
@@ -120,7 +145,16 @@ App opens → SplashScreen → checks Firebase Auth
            LoginScreen ↔ RegisterScreen
                 ↓
    DOG_OWNER → DogOwnerHomeScreen
+                 ├── My Dogs → DogListScreen → AddEditDogScreen
+                 ├── Reminders → ReminderListScreen → AddEditReminderScreen
+                 ├── Meetups → MeetupListScreen → CreateMeetupScreen
+                 ├── Find Services → BrowseProvidersScreen → ProviderDetailScreen
+                 └── AI Chat → (not yet wired — awaiting backend)
+
    SERVICE_PROVIDER → ServiceProviderHomeScreen
+                 ├── My Profile → ServiceProviderProfileScreen
+                 ├── Service Requests → IncomingRequestsScreen
+                 └── My Schedule → (placeholder)
 ```
 
 ## Git Workflow
@@ -145,43 +179,36 @@ App opens → SplashScreen → checks Firebase Auth
 * When working on a specific layer, do not implement other layers unless explicitly requested
 * AI is supplementary — never make core features depend on AI availability
 
-## What's Done ✅
+## What's Done ✅ — Android (all merged to master)
 
-* Firebase Auth + Firestore + Navigation dependencies
-* Full MVVM package structure
-* Data models: User, Dog, Reminder, Meetup, ServiceProvider, ServiceRequest
-* AuthRepository: login, register (with providerType), logout, getUserRole
-* RegisterScreen: role selection + providerType selection for SERVICE_PROVIDER
-* LoginScreen
-* SplashScreen: auth guard + role-based routing
-* NavGraph: routes splash/login/register/dog_owner_home/service_provider_home
-* DogOwnerHomeScreen (placeholder)
-* ServiceProviderHomeScreen (placeholder)
-* PR #1 merged to master ✅
-* PR #2 merged to master ✅ (data-models-fix)
-* Branch `feature/dog-profiles` complete — PR open, pending merge
+| PR | Branch | Feature |
+|----|--------|---------|
+| #1 | feature/project-setup | Firebase Auth + Firestore + MVVM structure + Navigation |
+| #2 | feature/data-models-fix | Full data models + RegisterScreen providerType |
+| #3 | feature/dog-profiles | Dog CRUD (list, add, edit, delete) |
+| #4 | feature/reminders | Reminder CRUD + status toggle (ACTIVE/DONE) + dog picker |
+| #5 | feature/meetups | Meetups: browse, create, join, leave, delete |
+| #6 | feature/service-provider-profile | SERVICE_PROVIDER edits own profile |
+| #7 | feature/service-requests | Browse providers, send request (dialog + dog picker), approve/reject |
 
-## What's NOT Done Yet ❌ — Feature Roadmap
+## What's NOT Done Yet ❌ — Remaining Roadmap
 
-| Branch | Feature | Who |
-|--------|---------|-----|
-| `feature/dog-profiles` | Dog CRUD (list, add, edit, delete) | DOG_OWNER ✅ PR open |
-| `feature/reminders` | Reminder CRUD per dog | DOG_OWNER |
-| `feature/meetups` | Create, browse, join meetups | DOG_OWNER |
-| `feature/service-provider-profile` | Edit provider profile | SERVICE_PROVIDER |
-| `feature/service-requests` | Browse providers + send request | DOG_OWNER |
-| `feature/service-requests` | View + approve/reject requests | SERVICE_PROVIDER |
-| future | Meetup recommendation algorithm | Backend |
-| future | Admin: block/unblock users | ADMIN |
-| future | AI Chat | Both (via backend) |
+### Backend (Python + Flask — Visual Studio Code)
 
-### Next to build: `feature/reminders`
-Files needed:
-- `repository/ReminderRepository.kt`
-- `viewmodel/ReminderViewModel.kt`
-- `ui/reminder/ReminderListScreen.kt`
-- `ui/reminder/AddEditReminderScreen.kt`
-- Wire "Reminders" card in DogOwnerHomeScreen to ReminderListScreen
+| Step | Description |
+|------|-------------|
+| Flask project setup | `app.py` with `POST /chat` endpoint |
+| OpenAI integration | Forward chat messages to OpenAI API (key stored server-side only) |
+| Deploy to Render | Public HTTPS URL for Android to call |
+| Android Retrofit | Add Retrofit dependency, ApiClient, ApiService, wire AI Chat card |
+
+### Future / Optional
+
+| Feature | Who |
+|---------|-----|
+| Meetup recommendation algorithm | Backend |
+| Admin: block/unblock users | ADMIN role |
+| My Schedule (SERVICE_PROVIDER) | SERVICE_PROVIDER |
 
 ## Project History & Status
 
@@ -191,22 +218,26 @@ Files needed:
 ### 2026-04-11 — Foundation Complete (PR #1 → master)
 * Dependencies, MVVM structure, Auth, role-based navigation
 
-### 2026-04-12 — Data Models + Requirements Aligned (feature/data-models-fix)
-* Added ServiceProvider.kt (+ ProviderType constants)
-* Added ServiceRequest.kt (+ RequestStatus constants)
-* Updated Meetup.kt with dogBreeds[]
-* Updated RegisterScreen to capture providerType for SERVICE_PROVIDER
-* Updated AuthRepository to create serviceProviders Firestore doc on register
-* Corrected full system interaction model in CLAUDE.md
+### 2026-04-12 — Data Models + Requirements Aligned (PR #2 → master)
+* ServiceProvider.kt, ServiceRequest.kt, updated Meetup.kt, RegisterScreen providerType
 
-### 2026-04-12 — Dog Profiles Feature (feature/dog-profiles)
-* DogRepository: full Firestore CRUD for "dogs" collection
-* DogViewModel: DogListState + DogActionState sealed classes
-* DogListScreen: LazyColumn with edit/delete icons per dog, FAB to add
-* AddEditDogScreen: unified add/edit form with Firestore pre-fill in edit mode
-* DogOwnerHomeScreen: "My Dogs" card wired to DogListScreen
-* NavGraph: dog_list + add_edit_dog routes added
-* Added material-icons-extended dependency
+### 2026-04-12 — Dog Profiles (PR #3 → master)
+* DogRepository + DogViewModel + DogListScreen + AddEditDogScreen
+
+### 2026-04-22 — Reminders (PR #4 → master)
+* ReminderRepository + ReminderViewModel (dogMap) + ReminderListScreen + AddEditReminderScreen
+
+### 2026-04-22 — Meetups (PR #5 → master)
+* MeetupRepository + MeetupViewModel + MeetupListScreen + CreateMeetupScreen
+
+### 2026-04-27 — Service Provider Profile (PR #6 → master)
+* ServiceProviderRepository + ServiceProviderViewModel + ServiceProviderProfileScreen
+
+### 2026-04-27 — Service Requests (PR #7 → master)
+* ServiceRequestRepository + 3 ViewModels + BrowseProvidersScreen + ProviderDetailScreen + IncomingRequestsScreen
+
+### Next: Flask Backend
+* Build in VS Code, deploy to Render, connect Android AI Chat card via Retrofit
 
 ---
 
