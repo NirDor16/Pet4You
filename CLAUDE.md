@@ -155,13 +155,22 @@ App opens → SplashScreen → checks Firebase Auth
                  ├── Reminders → ReminderListScreen → AddEditReminderScreen
                  ├── Meetups → MeetupListScreen → CreateMeetupScreen
                  ├── Find Services → BrowseProvidersScreen → ProviderDetailScreen
-                 └── AI Chat → (not yet wired — awaiting backend)
+                 └── AI Chat → (not yet wired — backend ready, awaiting Render deploy + Retrofit)
 
    SERVICE_PROVIDER → ServiceProviderHomeScreen
                  ├── My Profile → ServiceProviderProfileScreen
                  ├── Service Requests → IncomingRequestsScreen
                  └── My Schedule → (placeholder)
 ```
+
+## Backend Notes (Flask)
+
+- Entry point: `backend/app.py` — single file, ~55 lines
+- Env vars: `OPENAI_API_KEY` + `API_KEY` in `backend/.env` (gitignored); template in `.env.example`
+- Model: `gpt-4o-mini`; security: `X-API-Key` header check
+- API: `POST /chat` `{ message, history[] }` → `{ reply }` | `GET /health` → `{ status: "ok" }`
+- Local run: `cd backend && source venv/Scripts/activate && python app.py`
+- ⚠️ Windows gotcha: always run with `debug=False`. `debug=True` spawns Werkzeug child processes that survive pkill — stale processes accumulate on port 5000 with stale env vars. Kill all: PowerShell `Get-Process python | Stop-Process -Force`
 
 ## Git Workflow
 
@@ -196,6 +205,13 @@ App opens → SplashScreen → checks Firebase Auth
 | #5 | feature/meetups | Meetups: browse, create, join, leave, delete |
 | #6 | feature/service-provider-profile | SERVICE_PROVIDER edits own profile |
 | #7 | feature/service-requests | Browse providers, send request (dialog + dog picker), approve/reject |
+| #8 | fix/textfield-text-color | TextField text visible — disable dynamicColor, explicit onSurface |
+
+## What's Done ✅ — Backend
+
+| PR | Branch | Feature |
+|----|--------|---------|
+| #9 | feature/flask-backend | Flask app.py + POST /chat + OpenAI gpt-4o-mini + API key auth |
 
 ## What's NOT Done Yet ❌ — Remaining Roadmap
 
@@ -203,8 +219,6 @@ App opens → SplashScreen → checks Firebase Auth
 
 | Step | Description |
 |------|-------------|
-| Flask project setup | `app.py` with `POST /chat` endpoint |
-| OpenAI integration | Forward chat messages to OpenAI API (key stored server-side only) |
 | Deploy to Render | Public HTTPS URL for Android to call |
 | Android Retrofit | Add Retrofit dependency, ApiClient, ApiService, wire AI Chat card |
 
@@ -242,8 +256,12 @@ App opens → SplashScreen → checks Firebase Auth
 ### 2026-04-27 — Service Requests (PR #7 → master)
 * ServiceRequestRepository + 3 ViewModels + BrowseProvidersScreen + ProviderDetailScreen + IncomingRequestsScreen
 
-### Next: Flask Backend
-* Build in VS Code, deploy to Render, connect Android AI Chat card via Retrofit
+### 2026-04-27 — Flask Backend (PR #9 → master)
+* backend/app.py — POST /chat + GET /health, gpt-4o-mini, X-API-Key auth, client-side history
+
+### Next: Render Deploy + Android Retrofit
+* Deploy backend to Render → get public HTTPS URL
+* Android: Retrofit + ApiClient + ChatRepository + AiChatViewModel + AiChatScreen + NavGraph wiring
 
 ---
 
