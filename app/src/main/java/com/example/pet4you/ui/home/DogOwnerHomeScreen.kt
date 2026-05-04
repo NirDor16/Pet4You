@@ -14,7 +14,8 @@ fun DogOwnerHomeScreen(
     onNavigateToDogs: () -> Unit,
     onNavigateToReminders: () -> Unit,
     onNavigateToMeetups: () -> Unit,
-    onNavigateToProviders: () -> Unit
+    onNavigateToProviders: () -> Unit,
+    onNavigateToAiChat: () -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -41,7 +42,7 @@ fun DogOwnerHomeScreen(
         Card(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp).clickable { onNavigateToProviders() }) {
             Text("Find Services", modifier = Modifier.padding(16.dp))
         }
-        Card(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
+        Card(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp).clickable { onNavigateToAiChat() }) {
             Text("AI Chat", modifier = Modifier.padding(16.dp))
         }
 

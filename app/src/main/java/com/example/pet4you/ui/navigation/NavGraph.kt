@@ -22,6 +22,7 @@ import com.example.pet4you.ui.serviceprovider.BrowseProvidersScreen
 import com.example.pet4you.ui.serviceprovider.IncomingRequestsScreen
 import com.example.pet4you.ui.serviceprovider.ProviderDetailScreen
 import com.example.pet4you.ui.serviceprovider.ServiceProviderProfileScreen
+import com.example.pet4you.ui.chat.AiChatScreen
 import com.example.pet4you.ui.splash.SplashScreen
 import com.example.pet4you.viewmodel.AuthViewModel
 
@@ -41,6 +42,7 @@ object Routes {
     const val BROWSE_PROVIDERS = "browse_providers"
     const val PROVIDER_DETAIL = "provider_detail/{providerId}"
     const val INCOMING_REQUESTS = "incoming_requests"
+    const val AI_CHAT = "ai_chat"
 }
 
 fun homeRouteForRole(role: String): String {
@@ -116,6 +118,9 @@ fun NavGraph(
                 },
                 onNavigateToProviders = {
                     navController.navigate(Routes.BROWSE_PROVIDERS)
+                },
+                onNavigateToAiChat = {
+                    navController.navigate(Routes.AI_CHAT)
                 }
             )
         }
@@ -230,6 +235,12 @@ fun NavGraph(
 
         composable(Routes.CREATE_MEETUP) {
             CreateMeetupScreen(
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(Routes.AI_CHAT) {
+            AiChatScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }
