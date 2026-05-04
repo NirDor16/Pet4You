@@ -95,14 +95,19 @@ com/example/pet4you/
 │   ├── Reminder.kt        (+ ReminderType, ReminderFrequency, ReminderStatus)
 │   ├── Meetup.kt          (includes dogBreeds[] for future matching)
 │   ├── ServiceProvider.kt (+ ProviderType: VET, DOG_SITTER, GROOMER)
-│   └── ServiceRequest.kt  (+ RequestStatus: PENDING, APPROVED, REJECTED)
+│   ├── ServiceRequest.kt  (+ RequestStatus: PENDING, APPROVED, REJECTED)
+│   └── ChatMessage.kt     (role: String, content: String)
+├── network/
+│   ├── ApiClient.kt       (Retrofit singleton + OkHttp X-API-Key interceptor)
+│   └── ApiService.kt      (ChatRequest, ChatResponse, suspend POST /chat)
 ├── repository/
 │   ├── AuthRepository.kt
 │   ├── DogRepository.kt
 │   ├── ReminderRepository.kt
 │   ├── MeetupRepository.kt
 │   ├── ServiceProviderRepository.kt
-│   └── ServiceRequestRepository.kt
+│   ├── ServiceRequestRepository.kt
+│   └── AiChatRepository.kt
 ├── viewmodel/
 │   ├── AuthViewModel.kt
 │   ├── DogViewModel.kt
@@ -111,7 +116,8 @@ com/example/pet4you/
 │   ├── ServiceProviderViewModel.kt
 │   ├── BrowseProvidersViewModel.kt
 │   ├── ProviderDetailViewModel.kt
-│   └── IncomingRequestsViewModel.kt
+│   ├── IncomingRequestsViewModel.kt
+│   └── AiChatViewModel.kt (sealed ChatState + StateFlow messages)
 ├── ui/
 │   ├── auth/
 │   │   ├── LoginScreen.kt
@@ -133,6 +139,8 @@ com/example/pet4you/
 │   │   ├── BrowseProvidersScreen.kt
 │   │   ├── ProviderDetailScreen.kt
 │   │   └── IncomingRequestsScreen.kt
+│   ├── chat/
+│   │   └── AiChatScreen.kt    (WhatsApp-style bubbles)
 │   ├── splash/
 │   │   └── SplashScreen.kt
 │   ├── navigation/
@@ -155,7 +163,7 @@ App opens → SplashScreen → checks Firebase Auth
                  ├── Reminders → ReminderListScreen → AddEditReminderScreen
                  ├── Meetups → MeetupListScreen → CreateMeetupScreen
                  ├── Find Services → BrowseProvidersScreen → ProviderDetailScreen
-                 └── AI Chat → (not yet wired — backend ready, awaiting Render deploy + Retrofit)
+                 └── AI Chat → AiChatScreen
 
    SERVICE_PROVIDER → ServiceProviderHomeScreen
                  ├── My Profile → ServiceProviderProfileScreen
@@ -179,53 +187,12 @@ App opens → SplashScreen → checks Firebase Auth
 - **Header:** `X-API-Key: pet4you-secret-123`
 - Free tier: first request after inactivity may take ~30s (cold start)
 
-## Android AI Chat — Design Decisions (implement next)
+## Gradle Commands (Android)
 
-The AI Chat feature needs to be wired into the Android app. All decisions are finalized:
-
-### What to build
-| File | Action | Notes |
-|------|--------|-------|
-| `app/build.gradle.kts` | Edit | Add Retrofit + Gson dependencies |
-| `data/model/ChatMessage.kt` | Create | Data class: `role: String`, `content: String` |
-| `network/ApiService.kt` | Create | Retrofit interface with `POST /chat` |
-| `network/ApiClient.kt` | Create | Retrofit singleton with base URL + X-API-Key header |
-| `repository/AiChatRepository.kt` | Create | `suspend fun sendMessage(message, history): Result<String>` |
-| `viewmodel/AiChatViewModel.kt` | Create | Sealed states + MutableStateFlow, holds conversation history |
-| `ui/chat/AiChatScreen.kt` | Create | WhatsApp-style bubble UI |
-| `ui/navigation/NavGraph.kt` | Edit | Add `AI_CHAT = "ai_chat"` route |
-| `ui/home/DogOwnerHomeScreen.kt` | Edit | Make AI Chat card clickable + add `onNavigateToAiChat` param |
-
-### UI Design
-- **Bubbles:** user messages → right-aligned, blue background; AI messages → left-aligned, gray background
-- **Loading:** show `"AI is typing..."` text while waiting for response
-- **Input:** TextField at the bottom + Send button
-- **History:** stored in ViewModel memory only — resets when user leaves the screen (no Firestore persistence)
-
-### Patterns to follow (match existing code exactly)
-- Sealed state classes: `sealed class ChatState { Idle, Loading, data class Success(...), data class Error(...) }`
-- `private val _state = MutableStateFlow<ChatState>(ChatState.Idle)` + `val state: StateFlow<ChatState> = _state`
-- Repository: `suspend fun` returning `Result<T>`, try/catch wrapping
-- ViewModel: `viewModelScope.launch { }` for all async ops
-- Retrofit call must be a `suspend fun` in `ApiService`
-
-### Retrofit setup
-```kotlin
-// build.gradle.kts — add to dependencies:
-implementation("com.squareup.retrofit2:retrofit:2.9.0")
-implementation("com.squareup.retrofit2:converter-gson:2.9.0")
-
-// ApiService.kt
-data class ChatRequest(val message: String, val history: List<ChatMessage>)
-data class ChatResponse(val reply: String)
-
-interface ApiService {
-    @POST("chat")
-    suspend fun sendMessage(@Body request: ChatRequest): ChatResponse
-}
-
-// ApiClient.kt — singleton with OkHttp interceptor that adds X-API-Key header
-```
+- `./gradlew testDebugUnitTest` — run JVM unit tests
+- `./gradlew assembleDebug` — compile check (full debug build)
+- ⚠️ `local.properties` is gitignored — must be copied manually into git worktrees
+- 3 pre-existing deprecation warnings in `ProviderDetailScreen.kt` + `ServiceProviderProfileScreen.kt` — not breaking, safe to ignore
 
 ## Git Workflow
 
@@ -261,21 +228,16 @@ interface ApiService {
 | #6 | feature/service-provider-profile | SERVICE_PROVIDER edits own profile |
 | #7 | feature/service-requests | Browse providers, send request (dialog + dog picker), approve/reject |
 | #8 | fix/textfield-text-color | TextField text visible — disable dynamicColor, explicit onSurface |
+| #11 | feature/ai-chat | Android AI Chat — Retrofit + MVVM + bubble UI (ChatMessage, ApiClient, ApiService, AiChatRepository, AiChatViewModel, AiChatScreen) |
 
 ## What's Done ✅ — Backend
 
 | PR | Branch | Feature |
 |----|--------|---------|
 | #9 | feature/flask-backend | Flask app.py + POST /chat + OpenAI gpt-4o-mini + API key auth |
+| #10 | feature/render-deploy | Render deploy — backend live at https://pet4you-backend.onrender.com |
 
 ## What's NOT Done Yet ❌ — Remaining Roadmap
-
-### Backend (Python + Flask — Visual Studio Code)
-
-| Step | Description |
-|------|-------------|
-| Deploy to Render | Public HTTPS URL for Android to call |
-| Android Retrofit | Add Retrofit dependency, ApiClient, ApiService, wire AI Chat card |
 
 ### Future / Optional
 
@@ -317,9 +279,10 @@ interface ApiService {
 ### 2026-05-04 — Render Deploy (PR #10 → master)
 * render.yaml added, backend deployed to https://pet4you-backend.onrender.com ✅
 
-### Next: Android AI Chat (implement in Android Studio)
-* All design decisions finalized — see "Android AI Chat — Design Decisions" section above
-* 9 files to create/edit — follow existing MVVM + Result<T> + StateFlow patterns exactly
+### 2026-05-04 — Android AI Chat (PR #11 → master)
+* ChatMessage + ApiClient + ApiService + AiChatRepository + AiChatViewModel + AiChatScreen
+* Retrofit 2.9.0 + Gson, OkHttp interceptor for X-API-Key header
+* WhatsApp-style bubble UI, conversation history in ViewModel only (no Firestore persistence)
 
 ---
 
