@@ -3,7 +3,6 @@ package com.example.pet4you.ui.chat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -19,7 +18,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.pet4you.data.model.ChatMessage
 import com.example.pet4you.viewmodel.AiChatViewModel
 import com.example.pet4you.viewmodel.ChatState
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -31,7 +29,6 @@ fun AiChatScreen(
     val state by viewModel.state.collectAsState()
     var inputText by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
-    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(messages.size) {
         if (messages.isNotEmpty()) {
@@ -65,8 +62,8 @@ fun AiChatScreen(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 contentPadding = PaddingValues(vertical = 12.dp)
             ) {
-                items(messages) { message ->
-                    MessageBubble(message)
+                items(messages.size, key = { it }) { index ->
+                    MessageBubble(messages[index])
                 }
                 if (state is ChatState.Loading) {
                     item {
@@ -109,11 +106,6 @@ fun AiChatScreen(
                         if (text.isNotEmpty()) {
                             viewModel.sendMessage(text)
                             inputText = ""
-                            coroutineScope.launch {
-                                if (messages.isNotEmpty()) {
-                                    listState.animateScrollToItem(messages.size - 1)
-                                }
-                            }
                         }
                     },
                     enabled = inputText.isNotBlank() && state !is ChatState.Loading
