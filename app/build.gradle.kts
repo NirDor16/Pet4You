@@ -66,6 +66,10 @@ dependencies {
     // Coroutines + Firebase
     implementation(libs.kotlinx.coroutines.play.services)
 
+    // Retrofit + Gson (AI Chat network layer)
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
