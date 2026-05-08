@@ -34,6 +34,33 @@ class AuthRepository {
         }
     }
 
+    suspend fun isUserBlocked(uid: String): Boolean {
+        return try {
+            val doc = firestore.collection("users").document(uid).get().await()
+            doc.getBoolean("isBlocked") ?: false
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    suspend fun getAllUsers(): Result<List<User>> {
+        return try {
+            val snapshot = firestore.collection("users").get().await()
+            Result.success(snapshot.documents.mapNotNull { it.toObject(User::class.java) })
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun setUserBlocked(uid: String, blocked: Boolean): Result<Unit> {
+        return try {
+            firestore.collection("users").document(uid).update("isBlocked", blocked).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     suspend fun register(
         fullName: String,
         email: String,

@@ -30,6 +30,11 @@ class AuthViewModel : ViewModel() {
             val result = repository.login(email, password)
             if (result.isSuccess) {
                 val uid = result.getOrNull()!!.uid
+                if (repository.isUserBlocked(uid)) {
+                    repository.logout()
+                    _authState.value = AuthState.Error("Your account has been blocked")
+                    return@launch
+                }
                 val role = repository.getUserRole(uid) ?: "DOG_OWNER"
                 _authState.value = AuthState.Success(role)
             } else {

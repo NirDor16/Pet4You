@@ -18,6 +18,7 @@ import com.example.pet4you.ui.meetup.CreateMeetupScreen
 import com.example.pet4you.ui.meetup.MeetupListScreen
 import com.example.pet4you.ui.reminder.AddEditReminderScreen
 import com.example.pet4you.ui.reminder.ReminderListScreen
+import com.example.pet4you.ui.admin.AdminScreen
 import com.example.pet4you.ui.serviceprovider.BrowseProvidersScreen
 import com.example.pet4you.ui.serviceprovider.IncomingRequestsScreen
 import com.example.pet4you.ui.serviceprovider.MyScheduleScreen
@@ -44,12 +45,14 @@ object Routes {
     const val PROVIDER_DETAIL = "provider_detail/{providerId}"
     const val INCOMING_REQUESTS = "incoming_requests"
     const val MY_SCHEDULE = "my_schedule"
+    const val ADMIN_HOME = "admin_home"
     const val AI_CHAT = "ai_chat"
 }
 
 fun homeRouteForRole(role: String): String {
     return when (role) {
         UserRole.SERVICE_PROVIDER -> Routes.SERVICE_PROVIDER_HOME
+        UserRole.ADMIN -> Routes.ADMIN_HOME
         else -> Routes.DOG_OWNER_HOME
     }
 }
@@ -149,6 +152,17 @@ fun NavGraph(
 
         composable(Routes.MY_SCHEDULE) {
             MyScheduleScreen(onBack = { navController.popBackStack() })
+        }
+
+        composable(Routes.ADMIN_HOME) {
+            AdminScreen(
+                onLogout = {
+                    authViewModel.logout()
+                    navController.navigate(Routes.LOGIN) {
+                        popUpTo(Routes.ADMIN_HOME) { inclusive = true }
+                    }
+                }
+            )
         }
 
         composable(Routes.PROVIDER_PROFILE) {
