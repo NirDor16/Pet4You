@@ -17,6 +17,7 @@ import com.example.pet4you.data.model.Meetup
 import com.example.pet4you.viewmodel.MeetupActionState
 import com.example.pet4you.viewmodel.MeetupListState
 import com.example.pet4you.viewmodel.MeetupViewModel
+import com.example.pet4you.viewmodel.RecommendState
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -29,6 +30,9 @@ fun MeetupListScreen(
 ) {
     val meetupListState by viewModel.meetupListState.collectAsState()
     val meetupActionState by viewModel.meetupActionState.collectAsState()
+    val recommendState by viewModel.recommendState.collectAsState()
+    var selectedTab by remember { mutableStateOf(0) }
+    val tabs = listOf("All Meetups", "For You")
 
     LaunchedEffect(Unit) { viewModel.loadMeetups() }
 
@@ -36,6 +40,10 @@ fun MeetupListScreen(
         if (meetupActionState is MeetupActionState.Success) {
             viewModel.resetActionState()
         }
+    }
+
+    LaunchedEffect(selectedTab) {
+        if (selectedTab == 1) viewModel.loadRecommendations()
     }
 
     Scaffold(
@@ -52,47 +60,97 @@ fun MeetupListScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(16.dp)
         ) {
-            if (meetupActionState is MeetupActionState.Error) {
-                Text(
-                    text = (meetupActionState as MeetupActionState.Error).message,
-                    color = Color.Red,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
+            TabRow(selectedTabIndex = selectedTab) {
+                tabs.forEachIndexed { index, title ->
+                    Tab(
+                        selected = selectedTab == index,
+                        onClick = { selectedTab = index },
+                        text = { Text(title) }
+                    )
+                }
             }
 
-            when (val state = meetupListState) {
-                is MeetupListState.Loading -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
-                    }
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+            ) {
+                if (meetupActionState is MeetupActionState.Error) {
+                    Text(
+                        text = (meetupActionState as MeetupActionState.Error).message,
+                        color = Color.Red,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
                 }
-                is MeetupListState.Error -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(state.message, color = Color.Red)
-                    }
-                }
-                is MeetupListState.Success -> {
-                    if (state.meetups.isEmpty()) {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Text("No meetups yet. Create one!")
-                        }
-                    } else {
-                        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            items(state.meetups) { meetup ->
-                                MeetupCard(
-                                    meetup = meetup,
-                                    currentUserId = state.currentUserId,
-                                    onJoin = { viewModel.joinMeetup(meetup.meetupId) },
-                                    onLeave = { viewModel.leaveMeetup(meetup.meetupId) },
-                                    onDelete = { viewModel.deleteMeetup(meetup.meetupId) }
-                                )
+
+                if (selectedTab == 0) {
+                    when (val state = meetupListState) {
+                        is MeetupListState.Loading -> {
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                CircularProgressIndicator()
                             }
                         }
+                        is MeetupListState.Error -> {
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                Text(state.message, color = Color.Red)
+                            }
+                        }
+                        is MeetupListState.Success -> {
+                            if (state.meetups.isEmpty()) {
+                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    Text("No meetups yet. Create one!")
+                                }
+                            } else {
+                                LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    items(state.meetups, key = { it.meetupId }) { meetup ->
+                                        MeetupCard(
+                                            meetup = meetup,
+                                            currentUserId = state.currentUserId,
+                                            onJoin = { viewModel.joinMeetup(meetup.meetupId) },
+                                            onLeave = { viewModel.leaveMeetup(meetup.meetupId) },
+                                            onDelete = { viewModel.deleteMeetup(meetup.meetupId) }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        else -> {}
+                    }
+                } else {
+                    when (val state = recommendState) {
+                        is RecommendState.Loading, RecommendState.Idle -> {
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                CircularProgressIndicator()
+                            }
+                        }
+                        is RecommendState.Error -> {
+                            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                Text(state.message, color = Color.Red)
+                            }
+                        }
+                        is RecommendState.Success -> {
+                            if (state.meetups.isEmpty()) {
+                                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    Text("No recommendations yet.\nAdd your dog's breed to see matching meetups.")
+                                }
+                            } else {
+                                LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    items(state.meetups, key = { it.meetupId }) { meetup ->
+                                        MeetupCard(
+                                            meetup = meetup,
+                                            currentUserId = state.currentUserId,
+                                            onJoin = { viewModel.joinMeetup(meetup.meetupId) },
+                                            onLeave = { viewModel.leaveMeetup(meetup.meetupId) },
+                                            onDelete = { viewModel.deleteMeetup(meetup.meetupId) }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        else -> {}
                     }
                 }
-                else -> {}
             }
         }
     }
