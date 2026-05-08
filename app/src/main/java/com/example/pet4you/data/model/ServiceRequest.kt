@@ -8,7 +8,8 @@ data class ServiceRequest(
     val providerType: String = "",
     val message: String = "",
     val status: String = RequestStatus.PENDING,
-    val createdAt: Long = System.currentTimeMillis()
+    val createdAt: Long = System.currentTimeMillis(),
+    val scheduledAt: Long = 0L
 )
 
 object RequestStatus {

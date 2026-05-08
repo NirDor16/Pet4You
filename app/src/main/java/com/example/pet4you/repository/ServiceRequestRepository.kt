@@ -51,11 +51,29 @@ class ServiceRequestRepository {
         }
     }
 
-    suspend fun updateRequestStatus(requestId: String, status: String): Result<Unit> {
+    suspend fun updateRequestStatus(
+        requestId: String,
+        status: String,
+        scheduledAt: Long? = null
+    ): Result<Unit> {
         return try {
-            firestore.collection("serviceRequests").document(requestId)
-                .update("status", status).await()
+            val updates = mutableMapOf<String, Any>("status" to status)
+            if (scheduledAt != null) updates["scheduledAt"] = scheduledAt
+            firestore.collection("serviceRequests").document(requestId).update(updates).await()
             Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getApprovedRequestsForCurrentProvider(): Result<List<ServiceRequest>> {
+        val uid = currentUserId ?: return Result.failure(Exception("Not logged in"))
+        return try {
+            val snapshot = firestore.collection("serviceRequests")
+                .whereEqualTo("serviceProviderId", uid)
+                .whereEqualTo("status", RequestStatus.APPROVED)
+                .get().await()
+            Result.success(snapshot.documents.mapNotNull { it.toObject(ServiceRequest::class.java) })
         } catch (e: Exception) {
             Result.failure(e)
         }

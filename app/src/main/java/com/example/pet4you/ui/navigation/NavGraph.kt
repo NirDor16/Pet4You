@@ -20,6 +20,7 @@ import com.example.pet4you.ui.reminder.AddEditReminderScreen
 import com.example.pet4you.ui.reminder.ReminderListScreen
 import com.example.pet4you.ui.serviceprovider.BrowseProvidersScreen
 import com.example.pet4you.ui.serviceprovider.IncomingRequestsScreen
+import com.example.pet4you.ui.serviceprovider.MyScheduleScreen
 import com.example.pet4you.ui.serviceprovider.ProviderDetailScreen
 import com.example.pet4you.ui.serviceprovider.ServiceProviderProfileScreen
 import com.example.pet4you.ui.chat.AiChatScreen
@@ -42,6 +43,7 @@ object Routes {
     const val BROWSE_PROVIDERS = "browse_providers"
     const val PROVIDER_DETAIL = "provider_detail/{providerId}"
     const val INCOMING_REQUESTS = "incoming_requests"
+    const val MY_SCHEDULE = "my_schedule"
     const val AI_CHAT = "ai_chat"
 }
 
@@ -138,8 +140,15 @@ fun NavGraph(
                 },
                 onNavigateToRequests = {
                     navController.navigate(Routes.INCOMING_REQUESTS)
+                },
+                onNavigateToSchedule = {
+                    navController.navigate(Routes.MY_SCHEDULE)
                 }
             )
+        }
+
+        composable(Routes.MY_SCHEDULE) {
+            MyScheduleScreen(onBack = { navController.popBackStack() })
         }
 
         composable(Routes.PROVIDER_PROFILE) {
