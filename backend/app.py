@@ -16,6 +16,26 @@ SYSTEM_PROMPT = (
 )
 
 
+def score_meetups(dog_breeds, user_id, meetups):
+    user_breeds = {b.lower() for b in dog_breeds}
+    scored = []
+    for meetup in meetups:
+        if meetup.get("creatorId") == user_id:
+            continue
+        if user_id in meetup.get("participants", []):
+            continue
+        meetup_breeds = {b.lower() for b in meetup.get("dogBreeds", [])}
+        if not meetup_breeds:
+            score = 0.5
+        elif user_breeds & meetup_breeds:
+            score = 1.0
+        else:
+            continue
+        scored.append((score, meetup.get("dateTime", 0), meetup))
+    scored.sort(key=lambda x: (-x[0], x[1]))
+    return [item[2] for item in scored]
+
+
 def check_api_key():
     return request.headers.get("X-API-Key") == API_KEY
 
@@ -50,6 +70,20 @@ def chat():
         return jsonify({"reply": reply})
     except Exception as e:
         return jsonify({"error": f"OpenAI error: {e}"}), 502
+
+
+@app.route("/recommend-meetups", methods=["POST"])
+def recommend_meetups():
+    if not check_api_key():
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json(silent=True) or {}
+    dog_breeds = data.get("dog_breeds", [])
+    user_id = data.get("user_id", "")
+    meetups = data.get("meetups", [])
+
+    recommendations = score_meetups(dog_breeds, user_id, meetups)
+    return jsonify({"recommendations": recommendations})
 
 
 if __name__ == "__main__":
