@@ -71,7 +71,7 @@ All provider types share the same UI, but providerType is used for filtering and
 * **reminders**: reminderId, ownerId, dogId, type, dateTime, frequency, status (ACTIVE/DONE)
 * **meetups**: meetupId, creatorId, location, dateTime, description, participants[], dogBreeds[]
 * **serviceProviders**: serviceProviderId (=uid), providerType, fullName, email, description, location, isAvailable, createdAt
-* **serviceRequests**: requestId, dogOwnerId, serviceProviderId, dogId, providerType, message, status (PENDING/APPROVED/REJECTED), createdAt
+* **serviceRequests**: requestId, dogOwnerId, serviceProviderId, dogId, providerType, message, status (PENDING/APPROVED/REJECTED), createdAt, scheduledAt
 
 ## App Architecture Layers
 
@@ -93,7 +93,7 @@ com/example/pet4you/
 │   ├── User.kt            (+ UserRole: DOG_OWNER, SERVICE_PROVIDER, ADMIN)
 │   ├── Dog.kt
 │   ├── Reminder.kt        (+ ReminderType, ReminderFrequency, ReminderStatus)
-│   ├── Meetup.kt          (includes dogBreeds[] for future matching)
+│   ├── Meetup.kt          (includes dogBreeds[] for breed-based recommendation matching)
 │   ├── ServiceProvider.kt (+ ProviderType: VET, DOG_SITTER, GROOMER)
 │   ├── ServiceRequest.kt  (+ RequestStatus: PENDING, APPROVED, REJECTED)
 │   └── ChatMessage.kt     (role: String, content: String)
