@@ -229,6 +229,7 @@ App opens → SplashScreen → checks Firebase Auth
 | #7 | feature/service-requests | Browse providers, send request (dialog + dog picker), approve/reject |
 | #8 | fix/textfield-text-color | TextField text visible — disable dynamicColor, explicit onSurface |
 | #11 | feature/ai-chat | Android AI Chat — Retrofit + MVVM + bubble UI (ChatMessage, ApiClient, ApiService, AiChatRepository, AiChatViewModel, AiChatScreen) |
+| #12 | feature/my-schedule | My Schedule — scheduledAt field on ServiceRequest, DatePicker+TimePicker on approve, MyScheduleViewModel + MyScheduleScreen (sorted by date) |
 
 ## What's Done ✅ — Backend
 
@@ -245,7 +246,6 @@ App opens → SplashScreen → checks Firebase Auth
 |---------|-----|
 | Meetup recommendation algorithm | Backend |
 | Admin: block/unblock users | ADMIN role |
-| My Schedule (SERVICE_PROVIDER) | SERVICE_PROVIDER |
 
 ## Project History & Status
 
@@ -283,6 +283,12 @@ App opens → SplashScreen → checks Firebase Auth
 * ChatMessage + ApiClient + ApiService + AiChatRepository + AiChatViewModel + AiChatScreen
 * Retrofit 2.9.0 + Gson, OkHttp interceptor for X-API-Key header
 * WhatsApp-style bubble UI, conversation history in ViewModel only (no Firestore persistence)
+
+### 2026-05-08 — My Schedule (PR #12 → master)
+* scheduledAt: Long field added to ServiceRequest (default 0L, backward-compatible with Firestore)
+* Approve flow: DatePickerDialog (Material3) → TimePickerDialog (android.app) → saves scheduledAt to Firestore
+* MyScheduleViewModel + MyScheduleScreen — APPROVED requests sorted by scheduledAt, LazyColumn of ScheduleCard
+* My Schedule card wired in ServiceProviderHomeScreen + NavGraph route added
 
 ---
 
