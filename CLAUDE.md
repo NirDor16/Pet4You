@@ -41,7 +41,7 @@ Stored as `role` field in Firestore per user:
 
 * `DOG_OWNER` — browses providers, sends service requests, manages dogs/reminders/meetups
 * `SERVICE_PROVIDER` — receives and manages incoming service requests, manages own profile
-* `ADMIN` — manages users (block/unblock), future feature
+* `ADMIN` — manages users (block/unblock) via AdminScreen
 
 ## Interaction Model (Asymmetric)
 
@@ -99,7 +99,7 @@ com/example/pet4you/
 │   └── ChatMessage.kt     (role: String, content: String)
 ├── network/
 │   ├── ApiClient.kt       (Retrofit singleton + OkHttp X-API-Key interceptor)
-│   └── ApiService.kt      (ChatRequest, ChatResponse, suspend POST /chat)
+│   └── ApiService.kt      (ChatRequest, ChatResponse, RecommendMeetupsRequest/Response, POST /chat + POST /recommend-meetups)
 ├── repository/
 │   ├── AuthRepository.kt
 │   ├── DogRepository.kt
@@ -117,7 +117,8 @@ com/example/pet4you/
 │   ├── BrowseProvidersViewModel.kt
 │   ├── ProviderDetailViewModel.kt
 │   ├── IncomingRequestsViewModel.kt
-│   └── AiChatViewModel.kt (sealed ChatState + StateFlow messages)
+│   ├── AiChatViewModel.kt (sealed ChatState + StateFlow messages)
+│   └── MyScheduleViewModel.kt
 ├── ui/
 │   ├── auth/
 │   │   ├── LoginScreen.kt
@@ -138,7 +139,10 @@ com/example/pet4you/
 │   │   ├── ServiceProviderProfileScreen.kt
 │   │   ├── BrowseProvidersScreen.kt
 │   │   ├── ProviderDetailScreen.kt
-│   │   └── IncomingRequestsScreen.kt
+│   │   ├── IncomingRequestsScreen.kt
+│   │   └── MyScheduleScreen.kt
+│   ├── admin/
+│   │   └── AdminScreen.kt
 │   ├── chat/
 │   │   └── AiChatScreen.kt    (WhatsApp-style bubbles)
 │   ├── splash/
@@ -168,15 +172,16 @@ App opens → SplashScreen → checks Firebase Auth
    SERVICE_PROVIDER → ServiceProviderHomeScreen
                  ├── My Profile → ServiceProviderProfileScreen
                  ├── Service Requests → IncomingRequestsScreen
-                 └── My Schedule → (placeholder)
+                 └── My Schedule → MyScheduleScreen
 ```
 
 ## Backend Notes (Flask)
 
-- Entry point: `backend/app.py` — single file, ~55 lines
+- Entry point: `backend/app.py` — ~90 lines
 - Env vars: `OPENAI_API_KEY` + `API_KEY` in `backend/.env` (gitignored); template in `.env.example`
 - Model: `gpt-4o-mini`; security: `X-API-Key` header check
-- API: `POST /chat` `{ message, history[] }` → `{ reply }` | `GET /health` → `{ status: "ok" }`
+- API: `POST /chat` `{ message, history[] }` → `{ reply }` | `GET /health` → `{ status: "ok" }` | `POST /recommend-meetups` `{ dog_breeds, user_id, meetups[] }` → `{ recommendations[] }`
+- Tests: `backend/test_recommend.py` — 8 pytest tests for `score_meetups()`; run with `py -m pytest test_recommend.py -v`
 - Local run: `cd backend && source venv/Scripts/activate && python app.py`
 - ⚠️ Windows gotcha: always run with `debug=False`. `debug=True` spawns Werkzeug child processes that survive pkill — stale processes accumulate on port 5000 with stale env vars. Kill all: PowerShell `Get-Process python | Stop-Process -Force`
 
@@ -231,6 +236,7 @@ App opens → SplashScreen → checks Firebase Auth
 | #11 | feature/ai-chat | Android AI Chat — Retrofit + MVVM + bubble UI (ChatMessage, ApiClient, ApiService, AiChatRepository, AiChatViewModel, AiChatScreen) |
 | #12 | feature/my-schedule | My Schedule — scheduledAt field on ServiceRequest, DatePicker+TimePicker on approve, MyScheduleViewModel + MyScheduleScreen (sorted by date) |
 | #13 | feature/admin | Admin panel — block/unblock users, isBlocked login enforcement, AdminViewModel + AdminScreen, ADMIN routing in NavGraph |
+| #14 | feature/meetup-recommendation | Meetup recommendation — For You tab with breed-based scoring, RecommendState + loadRecommendations() in MeetupViewModel |
 
 ## What's Done ✅ — Backend
 
@@ -238,14 +244,11 @@ App opens → SplashScreen → checks Firebase Auth
 |----|--------|---------|
 | #9 | feature/flask-backend | Flask app.py + POST /chat + OpenAI gpt-4o-mini + API key auth |
 | #10 | feature/render-deploy | Render deploy — backend live at https://pet4you-backend.onrender.com |
+| #14 | feature/meetup-recommendation | POST /recommend-meetups — score_meetups() algorithm + 8 pytest tests |
 
 ## What's NOT Done Yet ❌ — Remaining Roadmap
 
-### Future / Optional
-
-| Feature | Who |
-|---------|-----|
-| Meetup recommendation algorithm | Backend |
+All planned features are complete. No remaining roadmap items.
 
 ## Project History & Status
 
@@ -296,6 +299,14 @@ App opens → SplashScreen → checks Firebase Auth
 * Approve flow: DatePickerDialog (Material3) → TimePickerDialog (android.app) → saves scheduledAt to Firestore
 * MyScheduleViewModel + MyScheduleScreen — APPROVED requests sorted by scheduledAt, LazyColumn of ScheduleCard
 * My Schedule card wired in ServiceProviderHomeScreen + NavGraph route added
+
+### 2026-05-08 — Meetup Recommendation (PR #14 → master)
+* Backend: score_meetups() — breed match=1.0, open meetup=0.5, no match=excluded; sorted score DESC / dateTime ASC
+* Backend: POST /recommend-meetups endpoint — same X-API-Key auth, stateless (Android sends meetups + breeds)
+* Backend: test_recommend.py — 8 pytest tests, all passing
+* Android: RecommendMeetupsRequest/Response + Retrofit endpoint in ApiService.kt
+* Android: RecommendState sealed class + loadRecommendations() in MeetupViewModel
+* Android: TabRow ("All Meetups" / "For You") in MeetupListScreen — lazy-loads on tab switch
 
 ---
 
