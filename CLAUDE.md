@@ -192,6 +192,24 @@ App opens → SplashScreen → checks Firebase Auth
 - **Header:** `X-API-Key: pet4you-secret-123`
 - Free tier: first request after inactivity may take ~30s (cold start)
 
+## Firestore Security Rules
+
+Rules are configured in Firebase Console → Firestore → Rules tab.
+⚠️ The original test-mode rules expired 2026-05-11 — replaced with production rules on 2026-05-12.
+
+Current rules enforce:
+
+| Collection | Read | Write |
+|---|---|---|
+| `users` | any signed-in user | owner creates own doc; owner or ADMIN updates; ADMIN deletes |
+| `dogs` | any signed-in user | owner creates (ownerId == uid); owner updates/deletes |
+| `reminders` | owner only (ownerId == uid) | owner only |
+| `meetups` | any signed-in user | any signed-in creates/updates; creator deletes |
+| `serviceProviders` | any signed-in user | provider updates own doc (uid == providerId); ADMIN deletes |
+| `serviceRequests` | dogOwnerId or serviceProviderId or ADMIN | dogOwner creates; both sides update; dogOwner or ADMIN deletes |
+
+Rules use helper functions `isSignedIn()`, `isUser(uid)`, `role()`, `isAdmin()` — `role()` does a `get()` on the user document to read the `role` field.
+
 ## Gradle Commands (Android)
 
 - `./gradlew testDebugUnitTest` — run JVM unit tests
@@ -245,6 +263,12 @@ App opens → SplashScreen → checks Firebase Auth
 | #9 | feature/flask-backend | Flask app.py + POST /chat + OpenAI gpt-4o-mini + API key auth |
 | #10 | feature/render-deploy | Render deploy — backend live at https://pet4you-backend.onrender.com |
 | #14 | feature/meetup-recommendation | POST /recommend-meetups — score_meetups() algorithm + 8 pytest tests |
+
+## What's Done ✅ — Firebase / Infrastructure
+
+| Date | Item |
+|------|------|
+| 2026-05-12 | Firestore Security Rules — replaced expired test-mode rules with production rules scoped per collection and role |
 
 ## What's NOT Done Yet ❌ — Remaining Roadmap
 
@@ -307,6 +331,11 @@ All planned features are complete. No remaining roadmap items.
 * Android: RecommendMeetupsRequest/Response + Retrofit endpoint in ApiService.kt
 * Android: RecommendState sealed class + loadRecommendations() in MeetupViewModel
 * Android: TabRow ("All Meetups" / "For You") in MeetupListScreen — lazy-loads on tab switch
+
+### 2026-05-12 — Firestore Security Rules (Firebase Console)
+* Test-mode rules expired (were set to allow all until 2026-05-11)
+* Replaced with production security rules scoped per collection and role
+* Rules enforce: authenticated-only access, owners manage own data, ADMIN has elevated permissions, serviceRequests visible only to the two parties involved
 
 ---
 
