@@ -24,23 +24,39 @@ class MeetupRepository {
         }
     }
 
+    suspend fun getMeetupById(meetupId: String): Result<Meetup> {
+        return try {
+            val doc = firestore.collection("meetups").document(meetupId).get().await()
+            val meetup = doc.toObject(Meetup::class.java)
+                ?: return Result.failure(Exception("Meetup not found"))
+            Result.success(meetup)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     suspend fun createMeetup(
+        title: String,
         location: String,
         dateTime: Long,
         description: String,
-        dogBreeds: List<String>
+        dogBreeds: List<String>,
+        participantLimit: Int,
     ): Result<Unit> {
         return try {
             val uid = currentUserId ?: return Result.failure(Exception("User not logged in"))
             val docRef = firestore.collection("meetups").document()
             val meetup = Meetup(
-                meetupId = docRef.id,
-                creatorId = uid,
-                location = location,
-                dateTime = dateTime,
-                description = description,
-                participants = listOf(uid),
-                dogBreeds = dogBreeds
+                meetupId       = docRef.id,
+                creatorId      = uid,
+                title          = title,
+                location       = location,
+                dateTime       = dateTime,
+                description    = description,
+                participants   = listOf(uid),
+                dogBreeds      = dogBreeds,
+                participantLimit = participantLimit,
+                createdAt      = System.currentTimeMillis(),
             )
             docRef.set(meetup).await()
             Result.success(Unit)

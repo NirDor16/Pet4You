@@ -126,7 +126,7 @@ All provider types share the same UI, but providerType is used for filtering and
 * **users**: uid, fullName, email, role, isBlocked, createdAt
 * **dogs**: dogId, ownerId, name, breed, birthDate, notes
 * **reminders**: reminderId, ownerId, dogId, type, dateTime, frequency, status (ACTIVE/DONE)
-* **meetups**: meetupId, creatorId, location, dateTime, description, participants[], dogBreeds[]
+* **meetups**: meetupId, creatorId, title, location, dateTime, description, participants[], dogBreeds[], participantLimit (0=unlimited), createdAt — `recommendationScore` is transient (not in Firestore, populated from backend API)
 * **serviceProviders**: serviceProviderId (=uid), providerType, fullName, email, description, location, isAvailable, createdAt
 * **serviceRequests**: requestId, dogOwnerId, serviceProviderId, dogId, providerType, message, status (PENDING/APPROVED/REJECTED), createdAt, scheduledAt
 
@@ -150,7 +150,7 @@ com/example/pet4you/
 │   ├── User.kt            (+ UserRole: DOG_OWNER, SERVICE_PROVIDER, ADMIN)
 │   ├── Dog.kt
 │   ├── Reminder.kt        (+ ReminderType, ReminderFrequency, ReminderStatus)
-│   ├── Meetup.kt          (includes dogBreeds[] for breed-based recommendation matching)
+│   ├── Meetup.kt          (title, location, dateTime, description, participants[], dogBreeds[], participantLimit, createdAt, recommendationScore?)
 │   ├── ServiceProvider.kt (+ ProviderType: VET, DOG_SITTER, GROOMER)
 │   ├── ServiceRequest.kt  (+ RequestStatus: PENDING, APPROVED, REJECTED)
 │   └── ChatMessage.kt     (role: String, content: String)
@@ -190,8 +190,9 @@ com/example/pet4you/
 │   │   ├── ReminderListScreen.kt
 │   │   └── AddEditReminderScreen.kt
 │   ├── meetup/
-│   │   ├── MeetupListScreen.kt
-│   │   └── CreateMeetupScreen.kt
+│   │   ├── MeetupListScreen.kt    (3 tabs: All / My Meetups / Recommended + search bar)
+│   │   ├── MeetupDetailScreen.kt  (full detail: info cards, dog breeds chips, join/leave/delete)
+│   │   └── CreateMeetupScreen.kt  (title + location required, participantLimit optional)
 │   ├── serviceprovider/
 │   │   ├── ServiceProviderProfileScreen.kt
 │   │   ├── BrowseProvidersScreen.kt
@@ -222,7 +223,8 @@ App opens → SplashScreen → checks Firebase Auth
    DOG_OWNER → DogOwnerHomeScreen
                  ├── My Dogs → DogListScreen → AddEditDogScreen
                  ├── Reminders → ReminderListScreen → AddEditReminderScreen
-                 ├── Meetups → MeetupListScreen → CreateMeetupScreen
+                 ├── Meetups → MeetupListScreen → MeetupDetailScreen
+                 │                            → CreateMeetupScreen
                  ├── Find Services → BrowseProvidersScreen → ProviderDetailScreen
                  └── AI Chat → AiChatScreen
 
@@ -272,7 +274,7 @@ Rules use helper functions `isSignedIn()`, `isUser(uid)`, `role()`, `isAdmin()` 
 - `./gradlew testDebugUnitTest` — run JVM unit tests
 - `./gradlew assembleDebug` — compile check (full debug build)
 - ⚠️ `local.properties` is gitignored — must be copied manually into git worktrees
-- 3 pre-existing deprecation warnings in `ProviderDetailScreen.kt` + `ServiceProviderProfileScreen.kt` — not breaking, safe to ignore
+- Pre-existing deprecation warnings (safe to ignore): `ProviderDetailScreen.kt`, `ServiceProviderProfileScreen.kt`, `CreateMeetupScreen.kt`, `MeetupDetailScreen.kt` — all about `Icons.Filled.Notes` / `menuAnchor()`; not breaking
 
 ## Git Workflow
 
@@ -312,6 +314,8 @@ Rules use helper functions `isSignedIn()`, `isUser(uid)`, `role()`, `isAdmin()` 
 | #12 | feature/my-schedule | My Schedule — scheduledAt field on ServiceRequest, DatePicker+TimePicker on approve, MyScheduleViewModel + MyScheduleScreen (sorted by date) |
 | #13 | feature/admin | Admin panel — block/unblock users, isBlocked login enforcement, AdminViewModel + AdminScreen, ADMIN routing in NavGraph |
 | #14 | feature/meetup-recommendation | Meetup recommendation — For You tab with breed-based scoring, RecommendState + loadRecommendations() in MeetupViewModel |
+| #15 | feature/ui-upgrade | Full Material 3 UI upgrade — Teal+Amber palette, Nunito font, dark mode, CommonComponents, all 17 screens redesigned, NavGraph slide+fade transitions |
+| WIP | feature/meetup-upgrade | Meetup system upgrade — MeetupDetailScreen (new), 3-tab list (All/My/Recommended), search bar, title + participantLimit fields, shared ViewModel across list/detail/create |
 
 ## What's Done ✅ — Backend
 
@@ -327,9 +331,31 @@ Rules use helper functions `isSignedIn()`, `isUser(uid)`, `role()`, `isAdmin()` 
 |------|------|
 | 2026-05-12 | Firestore Security Rules — replaced expired test-mode rules with production rules scoped per collection and role |
 
+## Future Work 🔮 — Meetup Recommendation Algorithm
+
+The recommendation system is **partially implemented** — the infrastructure is ready, only the backend scoring logic needs expanding.
+
+### What's Already in Place
+| Layer | What exists |
+|-------|------------|
+| Backend | `score_meetups()` in `backend/app.py` — currently scores: breed match=1.0, open meetup=0.5, no match=excluded |
+| Backend | `POST /recommend-meetups` endpoint — stateless, receives meetups + breeds from Android |
+| Android ViewModel | `RecommendState` sealed class + `loadRecommendations()` in `MeetupViewModel` |
+| Android Model | `recommendationScore: Float?` field on `Meetup` — annotated `@get:Exclude` (not stored in Firestore; populated from API response when backend sends it) |
+| Android UI | "Recommended" tab in `MeetupListScreen` — already wired and displayed |
+
+### How to Extend the Algorithm (backend only)
+The Android side is ready — only `score_meetups()` in `backend/app.py` needs changes:
+- **Location proximity**: score by distance if meetup location matches user's city/area
+- **Date preference**: boost upcoming meetups within the user's preferred window
+- **Dog size/age**: match meetup's `dogBreeds` list to similar-sized breeds
+- **Past history**: boost meetups in locations the user has attended before
+
+When the backend starts returning a `score` field per meetup in the JSON response, add `@SerializedName("score")` to `recommendationScore` in `Meetup.kt` to surface it in the UI (e.g., "Match 87%" badge on Recommended cards).
+
 ## What's NOT Done Yet ❌ — Remaining Roadmap
 
-All planned features are complete. No remaining roadmap items.
+No remaining core features. See "Future Work" above for the recommendation algorithm next step.
 
 ## Project History & Status
 
@@ -407,6 +433,15 @@ All planned features are complete. No remaining roadmap items.
 * **ProviderDetailScreen**: header ElevatedCard with type badge, `HorizontalDivider`, `InfoRow` for details
 * **NavGraph**: global slide+fade transitions on all routes (300ms)
 * Google Fonts dependency added: `androidx.compose.ui:ui-text-google-fonts` (falls back to Roboto if GMS unavailable)
+
+### 2026-05-18 — Meetup System Upgrade (feature/meetup-upgrade, WIP)
+* **Data model**: `Meetup.kt` — added `title` (required), `participantLimit` (0=unlimited), `createdAt`, `recommendationScore: Float?` (`@get:Exclude` — not stored in Firestore, infrastructure for future scoring UI)
+* **Repository**: `MeetupRepository.kt` — updated `createMeetup` signature, added `getMeetupById`
+* **ViewModel**: `MeetupViewModel.kt` — added `MeetupDetailState`, `_detailState`, `loadMeetupById`; added `joinMeetupFromDetail` / `leaveMeetupFromDetail` / `deleteMeetupFromDetail` (set `MeetupActionState.Success` for detail screen; also refresh list in background); refactored to `refreshMeetupList()` private suspend fun
+* **MeetupListScreen**: 3 tabs (All / My Meetups / Recommended); search bar on All tab (client-side filter by title/location/description); cards are clickable (navigate to detail); `StatusBadge` for "Your meetup" / "Joined"
+* **CreateMeetupScreen**: added Title field (required), Participant Limit field (optional, numeric)
+* **MeetupDetailScreen** (new): header ElevatedCard (title + location + date + participant count), description card, dog breeds `FlowRow` with `AssistChip`; bottom action button adapts to role (Join / Leave / Delete); join/leave → reload detail; delete → navigate back
+* **NavGraph**: `MEETUP_DETAIL = "meetup_detail/{meetupId}"` route added; all 3 meetup composables share the same `MeetupViewModel` instance via `viewModel(meetupListEntry)` so list refreshes automatically when returning from detail/create
 
 ---
 
