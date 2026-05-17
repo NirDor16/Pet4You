@@ -5,6 +5,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -21,7 +22,9 @@ import com.example.pet4you.ui.dog.DogListScreen
 import com.example.pet4you.ui.home.DogOwnerHomeScreen
 import com.example.pet4you.ui.home.ServiceProviderHomeScreen
 import com.example.pet4you.ui.meetup.CreateMeetupScreen
+import com.example.pet4you.ui.meetup.MeetupDetailScreen
 import com.example.pet4you.ui.meetup.MeetupListScreen
+import com.example.pet4you.viewmodel.MeetupViewModel
 import com.example.pet4you.ui.reminder.AddEditReminderScreen
 import com.example.pet4you.ui.reminder.ReminderListScreen
 import com.example.pet4you.ui.serviceprovider.BrowseProvidersScreen
@@ -44,6 +47,7 @@ object Routes {
     const val ADD_EDIT_REMINDER    = "add_edit_reminder?reminderId={reminderId}"
     const val MEETUP_LIST          = "meetup_list"
     const val CREATE_MEETUP        = "create_meetup"
+    const val MEETUP_DETAIL        = "meetup_detail/{meetupId}"
     const val PROVIDER_PROFILE     = "provider_profile"
     const val BROWSE_PROVIDERS     = "browse_providers"
     const val PROVIDER_DETAIL      = "provider_detail/{providerId}"
@@ -209,15 +213,37 @@ fun NavGraph(
             )
         }
 
-        composable(Routes.MEETUP_LIST) {
+        composable(Routes.MEETUP_LIST) { entry ->
+            val sharedMeetupViewModel: MeetupViewModel = viewModel(entry)
             MeetupListScreen(
                 onNavigateToCreate = { navController.navigate(Routes.CREATE_MEETUP) },
+                onNavigateToDetail = { meetupId -> navController.navigate("meetup_detail/$meetupId") },
                 onNavigateBack     = { navController.popBackStack() },
+                viewModel          = sharedMeetupViewModel,
             )
         }
 
-        composable(Routes.CREATE_MEETUP) {
-            CreateMeetupScreen(onNavigateBack = { navController.popBackStack() })
+        composable(Routes.CREATE_MEETUP) { backStackEntry ->
+            val meetupListEntry = remember(backStackEntry) { navController.getBackStackEntry(Routes.MEETUP_LIST) }
+            val sharedMeetupViewModel: MeetupViewModel = viewModel(meetupListEntry)
+            CreateMeetupScreen(
+                onNavigateBack = { navController.popBackStack() },
+                viewModel      = sharedMeetupViewModel,
+            )
+        }
+
+        composable(
+            route     = Routes.MEETUP_DETAIL,
+            arguments = listOf(navArgument("meetupId") { type = NavType.StringType }),
+        ) { backStackEntry ->
+            val meetupId = backStackEntry.arguments?.getString("meetupId") ?: return@composable
+            val meetupListEntry = remember(backStackEntry) { navController.getBackStackEntry(Routes.MEETUP_LIST) }
+            val sharedMeetupViewModel: MeetupViewModel = viewModel(meetupListEntry)
+            MeetupDetailScreen(
+                meetupId       = meetupId,
+                onNavigateBack = { navController.popBackStack() },
+                viewModel      = sharedMeetupViewModel,
+            )
         }
 
         composable(Routes.AI_CHAT) {

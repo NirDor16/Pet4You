@@ -15,10 +15,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Notes
 import androidx.compose.material.icons.filled.Pets
@@ -41,6 +43,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.pet4you.ui.components.Pet4YouTopBar
@@ -58,9 +61,11 @@ fun CreateMeetupScreen(
 ) {
     val meetupActionState by viewModel.meetupActionState.collectAsState()
 
+    var title             by remember { mutableStateOf("") }
     var location          by remember { mutableStateOf("") }
     var description       by remember { mutableStateOf("") }
     var selectedDateTime  by remember { mutableStateOf(System.currentTimeMillis()) }
+    var participantLimit  by remember { mutableStateOf("") }
     var dogBreedsInput    by remember { mutableStateOf("") }
     var dogBreedsList     by remember { mutableStateOf<List<String>>(emptyList()) }
 
@@ -88,6 +93,15 @@ fun CreateMeetupScreen(
                 .padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
+            OutlinedTextField(
+                value         = title,
+                onValueChange = { title = it },
+                label         = { Text("Title") },
+                leadingIcon   = { Icon(Icons.Filled.Edit, contentDescription = null) },
+                singleLine    = true,
+                modifier      = Modifier.fillMaxWidth(),
+            )
+
             OutlinedTextField(
                 value         = location,
                 onValueChange = { location = it },
@@ -122,6 +136,16 @@ fun CreateMeetupScreen(
                 modifier      = Modifier.fillMaxWidth(),
             )
 
+            OutlinedTextField(
+                value         = participantLimit,
+                onValueChange = { if (it.all { c -> c.isDigit() }) participantLimit = it },
+                label         = { Text("Participant Limit (0 = unlimited)") },
+                leadingIcon   = { Icon(Icons.Filled.Pets, contentDescription = null) },
+                singleLine    = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier      = Modifier.fillMaxWidth(),
+            )
+
             Row(
                 modifier              = Modifier.fillMaxWidth(),
                 verticalAlignment     = Alignment.CenterVertically,
@@ -150,10 +174,10 @@ fun CreateMeetupScreen(
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(dogBreedsList) { breed ->
                         InputChip(
-                            selected      = false,
-                            onClick       = { dogBreedsList = dogBreedsList - breed },
-                            label         = { Text(breed) },
-                            trailingIcon  = {
+                            selected     = false,
+                            onClick      = { dogBreedsList = dogBreedsList - breed },
+                            label        = { Text(breed) },
+                            trailingIcon = {
                                 Icon(Icons.Default.Close, contentDescription = "Remove", modifier = Modifier.size(16.dp))
                             },
                         )
@@ -168,9 +192,12 @@ fun CreateMeetupScreen(
             Spacer(Modifier.height(4.dp))
 
             Button(
-                onClick  = { viewModel.createMeetup(location, selectedDateTime, description, dogBreedsList) },
+                onClick  = {
+                    val limit = participantLimit.toIntOrNull() ?: 0
+                    viewModel.createMeetup(title, location, selectedDateTime, description, dogBreedsList, limit)
+                },
                 modifier = Modifier.fillMaxWidth().height(52.dp),
-                enabled  = !isLoading && location.isNotBlank(),
+                enabled  = !isLoading && title.isNotBlank() && location.isNotBlank(),
             ) {
                 if (isLoading) {
                     CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
