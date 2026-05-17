@@ -31,9 +31,66 @@ All core features must work **independently** of AI availability.
 
 ## UI / Theme Notes
 
-- Theme config: `ui/theme/Theme.kt` — `dynamicColor = false`, explicit `LightColorScheme` with `onSurface = Color(0xFF1C1B1F)`
+- Theme config: `ui/theme/Theme.kt` — `dynamicColor = false`, full `LightColorScheme` + `DarkColorScheme` wired
 - TextField text color across the app comes from `colorScheme.onSurface` (Material3) — no per-field override needed
 - Do NOT re-enable `dynamicColor` — it causes TextField text to appear white on Android 12+ devices
+
+## Design System (established 2026-05-18)
+
+The app uses a unified Material 3 design system. **All new screens must follow these rules.**
+
+### Color Palette — Teal + Amber
+- **Light:** primary `#006B5B` (teal), tertiary/amber `#7E5700`, background `#F4FBF8`
+- **Dark:** primary `#5EDBC6`, tertiary/amber `#F9BC48`, background `#101512`
+- Colors defined in `ui/theme/Color.kt` as `md_light_*` / `md_dark_*` constants
+- Never use hardcoded `Color.Red`, `Color(0xFF...)` for UI — always use theme tokens
+
+### Status Colors (use these everywhere)
+| Status | containerColor | contentColor |
+|--------|---------------|--------------|
+| PENDING / neutral | `tertiaryContainer` | `onTertiaryContainer` |
+| APPROVED / active / success | `primaryContainer` | `onPrimaryContainer` |
+| REJECTED / error / blocked | `errorContainer` | `onErrorContainer` |
+
+### Typography — Nunito
+- Font: Nunito via `androidx.compose.ui:ui-text-google-fonts`
+- Full M3 scale defined in `ui/theme/Type.kt` — use `MaterialTheme.typography.*` tokens
+- Key weights: ExtraBold for headlines, SemiBold for titles, Regular for body
+- Falls back to system Roboto if Google Fonts is unavailable (no crash)
+
+### Shapes
+- Defined in `ui/theme/Shape.kt`: extraSmall=8dp, small=12dp, medium=16dp, large=24dp, extraLarge=32dp
+- Applied automatically via `MaterialTheme.shapes.*`
+
+### Reusable Components (`ui/components/CommonComponents.kt`)
+Always use these — do NOT duplicate loading/empty/error patterns:
+
+| Component | Usage |
+|-----------|-------|
+| `Pet4YouTopBar(title, onBack?, actions?)` | Every screen's top bar |
+| `LoadingBox(modifier?)` | Any loading state |
+| `EmptyState(icon, title, subtitle, modifier?)` | Any empty list |
+| `ErrorMessage(message, modifier?)` | Any error state — uses `colorScheme.error` |
+| `StatusBadge(label, containerColor, contentColor)` | Colored pill for statuses |
+| `Pet4YouCard(modifier?, onClick?, content)` | Standard ElevatedCard |
+| `InfoRow(icon, text, modifier?, tint?)` | Icon + text row in detail screens |
+
+### Card Style
+- Use `ElevatedCard` with `elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)`
+- Avatar circles: `Box` with `CircleShape` + `primaryContainer` background, first letter of name
+
+### Navigation Transitions
+- All routes in `NavGraph.kt` use `slideInHorizontally + fadeIn` / `slideOutHorizontally + fadeOut`
+- Set globally at the `NavHost` level — no per-composable override needed
+
+### Home Screen Pattern
+- Gradient header: `Brush.verticalGradient(primary → primaryContainer)` in a `Box`
+- Feature cards: `ElevatedCard` with icon + title + subtitle in a `Column`
+- Logout: `IconButton` with `ExitToApp` icon in top-right
+
+### Chat Bubble Colors
+- User bubble: `MaterialTheme.colorScheme.primary` / text: `onPrimary`
+- AI bubble: `MaterialTheme.colorScheme.surfaceVariant` / text: `onSurface`
 
 ## User Roles
 
@@ -336,6 +393,20 @@ All planned features are complete. No remaining roadmap items.
 * Test-mode rules expired (were set to allow all until 2026-05-11)
 * Replaced with production security rules scoped per collection and role
 * Rules enforce: authenticated-only access, owners manage own data, ADMIN has elevated permissions, serviceRequests visible only to the two parties involved
+
+### 2026-05-18 — UI Upgrade (on master, no separate PR)
+* **Design System**: `ui/theme/Color.kt` — full M3 Teal+Amber tonal palette (light + dark); `ui/theme/Type.kt` — Nunito Google Font, full type scale; `ui/theme/Shape.kt` — rounded shape tokens (8–32dp); `ui/theme/Theme.kt` — wires colors/type/shapes, responds to dark mode
+* **CommonComponents**: `ui/components/CommonComponents.kt` — `Pet4YouTopBar`, `LoadingBox`, `EmptyState`, `ErrorMessage`, `StatusBadge`, `Pet4YouCard`, `InfoRow`
+* **All 17 screens upgraded**: hardcoded colors → theme tokens, `Card` → `ElevatedCard`, raw TopAppBar → `Pet4YouTopBar`, inline loading/error/empty → CommonComponents
+* **Home screens**: gradient header (primary→primaryContainer), icon-led feature cards
+* **Auth screens**: Pet4You branding (Pets icon + title), leading icons in TextFields
+* **Chat**: theme colors for user/AI bubbles, `OutlinedTextField` + `FilledIconButton` for input
+* **Splash**: animated Pets icon + "Pet4You" title (fade + scale)
+* **MyScheduleScreen**: CalendarMonth icon, timeline-style left-accent card
+* **AdminScreen**: theme status badges (primaryContainer/errorContainer) replacing hardcoded green/red
+* **ProviderDetailScreen**: header ElevatedCard with type badge, `HorizontalDivider`, `InfoRow` for details
+* **NavGraph**: global slide+fade transitions on all routes (300ms)
+* Google Fonts dependency added: `androidx.compose.ui:ui-text-google-fonts` (falls back to Roboto if GMS unavailable)
 
 ---
 

@@ -1,104 +1,108 @@
 package com.example.pet4you.ui.dog
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.*
+import androidx.compose.material.icons.filled.Pets
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.pet4you.data.model.Dog
+import com.example.pet4you.ui.components.EmptyState
+import com.example.pet4you.ui.components.ErrorMessage
+import com.example.pet4you.ui.components.LoadingBox
+import com.example.pet4you.ui.components.Pet4YouTopBar
 import com.example.pet4you.viewmodel.DogActionState
 import com.example.pet4you.viewmodel.DogListState
 import com.example.pet4you.viewmodel.DogViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DogListScreen(
     onNavigateToAdd: () -> Unit,
     onNavigateToEdit: (dogId: String) -> Unit,
     onNavigateBack: () -> Unit,
-    viewModel: DogViewModel = viewModel()
+    viewModel: DogViewModel = viewModel(),
 ) {
-    val dogListState by viewModel.dogListState.collectAsState()
+    val dogListState   by viewModel.dogListState.collectAsState()
     val dogActionState by viewModel.dogActionState.collectAsState()
 
-    LaunchedEffect(Unit) {
-        viewModel.loadDogs()
-    }
+    LaunchedEffect(Unit) { viewModel.loadDogs() }
 
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("My Dogs") },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                }
-            )
-        },
+        topBar = { Pet4YouTopBar(title = "My Dogs", onBack = onNavigateBack) },
         floatingActionButton = {
-            FloatingActionButton(onClick = onNavigateToAdd) {
+            FloatingActionButton(
+                onClick           = onNavigateToAdd,
+                containerColor    = MaterialTheme.colorScheme.primary,
+                contentColor      = MaterialTheme.colorScheme.onPrimary,
+            ) {
                 Icon(Icons.Default.Add, contentDescription = "Add Dog")
             }
-        }
+        },
     ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .padding(horizontal = 16.dp)
+                .padding(paddingValues),
         ) {
             if (dogActionState is DogActionState.Error) {
-                Text(
-                    text = (dogActionState as DogActionState.Error).message,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(vertical = 8.dp)
+                ErrorMessage(
+                    message  = (dogActionState as DogActionState.Error).message,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 )
             }
 
             when (dogListState) {
-                is DogListState.Loading -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
-                    }
-                }
-                is DogListState.Error -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(
-                            text = (dogListState as DogListState.Error).message,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    }
-                }
+                is DogListState.Loading -> LoadingBox()
+                is DogListState.Error   -> ErrorMessage((dogListState as DogListState.Error).message)
                 is DogListState.Success -> {
                     val dogs = (dogListState as DogListState.Success).dogs
                     if (dogs.isEmpty()) {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Text(
-                                text = "No dogs yet. Tap + to add your first dog!",
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                        }
+                        EmptyState(
+                            icon     = Icons.Filled.Pets,
+                            title    = "No dogs yet",
+                            subtitle = "Tap + to add your first dog",
+                        )
                     } else {
-                        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            items(dogs) { dog ->
+                        LazyColumn(
+                            contentPadding      = PaddingValues(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            items(dogs, key = { it.dogId }) { dog ->
                                 DogCard(
-                                    dog = dog,
-                                    onEdit = { onNavigateToEdit(dog.dogId) },
-                                    onDelete = { viewModel.deleteDog(dog.dogId) }
+                                    dog      = dog,
+                                    onEdit   = { onNavigateToEdit(dog.dogId) },
+                                    onDelete = { viewModel.deleteDog(dog.dogId) },
                                 )
                             }
                         }
@@ -111,30 +115,46 @@ fun DogListScreen(
 }
 
 @Composable
-private fun DogCard(
-    dog: Dog,
-    onEdit: () -> Unit,
-    onDelete: () -> Unit
-) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+private fun DogCard(dog: Dog, onEdit: () -> Unit, onDelete: () -> Unit) {
+    ElevatedCard(
+        modifier  = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
+    ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+            modifier          = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(dog.name, style = MaterialTheme.typography.titleMedium)
-                Text(dog.breed, style = MaterialTheme.typography.bodyMedium)
+            Box(
+                modifier         = Modifier
+                    .size(44.dp)
+                    .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text  = dog.breed.firstOrNull()?.uppercaseChar()?.toString() ?: "?",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                )
             }
-            Row {
-                IconButton(onClick = onEdit) {
-                    Icon(Icons.Default.Edit, contentDescription = "Edit")
-                }
-                IconButton(onClick = onDelete) {
-                    Icon(Icons.Default.Delete, contentDescription = "Delete")
-                }
+            Spacer(Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text     = dog.name,
+                    style    = MaterialTheme.typography.titleMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text  = dog.breed,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            IconButton(onClick = onEdit) {
+                Icon(Icons.Default.Edit, contentDescription = "Edit", tint = MaterialTheme.colorScheme.primary)
+            }
+            IconButton(onClick = onDelete) {
+                Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
             }
         }
     }
