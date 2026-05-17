@@ -1,90 +1,114 @@
 package com.example.pet4you.ui.reminder
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.pet4you.data.model.Reminder
 import com.example.pet4you.data.model.ReminderStatus
 import com.example.pet4you.data.model.ReminderType
+import com.example.pet4you.ui.components.EmptyState
+import com.example.pet4you.ui.components.ErrorMessage
+import com.example.pet4you.ui.components.LoadingBox
+import com.example.pet4you.ui.components.Pet4YouTopBar
 import com.example.pet4you.viewmodel.ReminderActionState
 import com.example.pet4you.viewmodel.ReminderListState
 import com.example.pet4you.viewmodel.ReminderViewModel
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReminderListScreen(
     onNavigateToAdd: () -> Unit,
     onNavigateToEdit: (String) -> Unit,
     onNavigateBack: () -> Unit,
-    viewModel: ReminderViewModel = viewModel()
+    viewModel: ReminderViewModel = viewModel(),
 ) {
-    val reminderListState by viewModel.reminderListState.collectAsState()
+    val reminderListState   by viewModel.reminderListState.collectAsState()
     val reminderActionState by viewModel.reminderActionState.collectAsState()
 
     LaunchedEffect(Unit) { viewModel.loadReminders() }
 
     Scaffold(
-        topBar = {
-            TopAppBar(title = { Text("Reminders") })
-        },
+        topBar = { Pet4YouTopBar(title = "Reminders", onBack = onNavigateBack) },
         floatingActionButton = {
-            FloatingActionButton(onClick = onNavigateToAdd) {
+            FloatingActionButton(
+                onClick        = onNavigateToAdd,
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor   = MaterialTheme.colorScheme.onPrimary,
+            ) {
                 Icon(Icons.Default.Add, contentDescription = "Add Reminder")
             }
-        }
+        },
     ) { padding ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .padding(16.dp)
+                .padding(padding),
         ) {
             if (reminderActionState is ReminderActionState.Error) {
-                Text(
-                    text = (reminderActionState as ReminderActionState.Error).message,
-                    color = Color.Red,
-                    modifier = Modifier.padding(bottom = 8.dp)
+                ErrorMessage(
+                    message  = (reminderActionState as ReminderActionState.Error).message,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
                 )
             }
 
             when (val state = reminderListState) {
-                is ReminderListState.Loading -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
-                    }
-                }
-                is ReminderListState.Error -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text(state.message, color = Color.Red)
-                    }
-                }
+                is ReminderListState.Loading -> LoadingBox()
+                is ReminderListState.Error   -> ErrorMessage(state.message)
                 is ReminderListState.Success -> {
                     if (state.reminders.isEmpty()) {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Text("No reminders yet...")
-                        }
+                        EmptyState(
+                            icon     = Icons.Filled.Notifications,
+                            title    = "No reminders yet",
+                            subtitle = "Tap + to add your first reminder",
+                        )
                     } else {
-                        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            items(state.reminders) { reminder ->
+                        LazyColumn(
+                            contentPadding      = PaddingValues(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            items(state.reminders, key = { it.reminderId }) { reminder ->
                                 ReminderCard(
-                                    reminder = reminder,
-                                    dogName = state.dogMap[reminder.dogId] ?: "Unknown dog",
-                                    onEdit = { onNavigateToEdit(reminder.reminderId) },
-                                    onDelete = { viewModel.deleteReminder(reminder.reminderId) },
-                                    onToggleStatus = { viewModel.toggleStatus(reminder) }
+                                    reminder       = reminder,
+                                    dogName        = state.dogMap[reminder.dogId] ?: "Unknown dog",
+                                    onEdit         = { onNavigateToEdit(reminder.reminderId) },
+                                    onDelete       = { viewModel.deleteReminder(reminder.reminderId) },
+                                    onToggleStatus = { viewModel.toggleStatus(reminder) },
                                 )
                             }
                         }
@@ -102,46 +126,66 @@ private fun ReminderCard(
     dogName: String,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
-    onToggleStatus: () -> Unit
+    onToggleStatus: () -> Unit,
 ) {
     val dateFormatter = remember { SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()) }
+    val isActive      = reminder.status == ReminderStatus.ACTIVE
 
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(12.dp)) {
+    ElevatedCard(
+        modifier  = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
+    ) {
+        Column(modifier = Modifier.padding(14.dp)) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                modifier          = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
+                Icon(
+                    imageVector        = Icons.Filled.Notifications,
+                    contentDescription = null,
+                    tint               = MaterialTheme.colorScheme.primary,
+                    modifier           = Modifier.size(20.dp),
+                )
+                Spacer(Modifier.width(8.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = ReminderType.displayName(reminder.type),
-                        style = MaterialTheme.typography.titleMedium
+                        text  = ReminderType.displayName(reminder.type),
+                        style = MaterialTheme.typography.titleSmall,
                     )
                     Text(
-                        text = dogName,
+                        text  = dogName,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.primary,
                     )
-                    Text(
-                        text = dateFormatter.format(Date(reminder.dateTime)),
-                        style = MaterialTheme.typography.bodySmall
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector        = Icons.Filled.CalendarToday,
+                            contentDescription = null,
+                            modifier           = Modifier.size(12.dp),
+                            tint               = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            text  = dateFormatter.format(Date(reminder.dateTime)),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    FilterChip(
-                        selected = reminder.status == ReminderStatus.ACTIVE,
-                        onClick = onToggleStatus,
-                        label = {
-                            Text(if (reminder.status == ReminderStatus.ACTIVE) "ACTIVE" else "DONE")
-                        }
-                    )
-                    IconButton(onClick = onEdit) {
-                        Icon(Icons.Default.Edit, contentDescription = "Edit")
-                    }
-                    IconButton(onClick = onDelete) {
-                        Icon(Icons.Default.Delete, contentDescription = "Delete")
-                    }
+                FilterChip(
+                    selected = isActive,
+                    onClick  = onToggleStatus,
+                    label    = { Text(if (isActive) "Active" else "Done") },
+                    colors   = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor    = MaterialTheme.colorScheme.primaryContainer,
+                        selectedLabelColor        = MaterialTheme.colorScheme.onPrimaryContainer,
+                    ),
+                )
+                IconButton(onClick = onEdit) {
+                    Icon(Icons.Default.Edit, contentDescription = "Edit", tint = MaterialTheme.colorScheme.primary)
+                }
+                IconButton(onClick = onDelete) {
+                    Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
                 }
             }
         }

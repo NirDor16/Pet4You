@@ -1,5 +1,9 @@
 package com.example.pet4you.ui.navigation
 
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -8,8 +12,10 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
 import com.example.pet4you.data.model.UserRole
+import com.example.pet4you.ui.admin.AdminScreen
 import com.example.pet4you.ui.auth.LoginScreen
 import com.example.pet4you.ui.auth.RegisterScreen
+import com.example.pet4you.ui.chat.AiChatScreen
 import com.example.pet4you.ui.dog.AddEditDogScreen
 import com.example.pet4you.ui.dog.DogListScreen
 import com.example.pet4you.ui.home.DogOwnerHomeScreen
@@ -18,89 +24,87 @@ import com.example.pet4you.ui.meetup.CreateMeetupScreen
 import com.example.pet4you.ui.meetup.MeetupListScreen
 import com.example.pet4you.ui.reminder.AddEditReminderScreen
 import com.example.pet4you.ui.reminder.ReminderListScreen
-import com.example.pet4you.ui.admin.AdminScreen
 import com.example.pet4you.ui.serviceprovider.BrowseProvidersScreen
 import com.example.pet4you.ui.serviceprovider.IncomingRequestsScreen
 import com.example.pet4you.ui.serviceprovider.MyScheduleScreen
 import com.example.pet4you.ui.serviceprovider.ProviderDetailScreen
 import com.example.pet4you.ui.serviceprovider.ServiceProviderProfileScreen
-import com.example.pet4you.ui.chat.AiChatScreen
 import com.example.pet4you.ui.splash.SplashScreen
 import com.example.pet4you.viewmodel.AuthViewModel
 
 object Routes {
-    const val SPLASH = "splash"
-    const val LOGIN = "login"
-    const val REGISTER = "register"
-    const val DOG_OWNER_HOME = "dog_owner_home"
+    const val SPLASH               = "splash"
+    const val LOGIN                = "login"
+    const val REGISTER             = "register"
+    const val DOG_OWNER_HOME       = "dog_owner_home"
     const val SERVICE_PROVIDER_HOME = "service_provider_home"
-    const val DOG_LIST = "dog_list"
-    const val ADD_EDIT_DOG = "add_edit_dog?dogId={dogId}"
-    const val REMINDER_LIST = "reminder_list"
-    const val ADD_EDIT_REMINDER = "add_edit_reminder?reminderId={reminderId}"
-    const val MEETUP_LIST = "meetup_list"
-    const val CREATE_MEETUP = "create_meetup"
-    const val PROVIDER_PROFILE = "provider_profile"
-    const val BROWSE_PROVIDERS = "browse_providers"
-    const val PROVIDER_DETAIL = "provider_detail/{providerId}"
-    const val INCOMING_REQUESTS = "incoming_requests"
-    const val MY_SCHEDULE = "my_schedule"
-    const val ADMIN_HOME = "admin_home"
-    const val AI_CHAT = "ai_chat"
+    const val DOG_LIST             = "dog_list"
+    const val ADD_EDIT_DOG         = "add_edit_dog?dogId={dogId}"
+    const val REMINDER_LIST        = "reminder_list"
+    const val ADD_EDIT_REMINDER    = "add_edit_reminder?reminderId={reminderId}"
+    const val MEETUP_LIST          = "meetup_list"
+    const val CREATE_MEETUP        = "create_meetup"
+    const val PROVIDER_PROFILE     = "provider_profile"
+    const val BROWSE_PROVIDERS     = "browse_providers"
+    const val PROVIDER_DETAIL      = "provider_detail/{providerId}"
+    const val INCOMING_REQUESTS    = "incoming_requests"
+    const val MY_SCHEDULE          = "my_schedule"
+    const val ADMIN_HOME           = "admin_home"
+    const val AI_CHAT              = "ai_chat"
 }
 
-fun homeRouteForRole(role: String): String {
-    return when (role) {
-        UserRole.SERVICE_PROVIDER -> Routes.SERVICE_PROVIDER_HOME
-        UserRole.ADMIN -> Routes.ADMIN_HOME
-        else -> Routes.DOG_OWNER_HOME
-    }
+fun homeRouteForRole(role: String): String = when (role) {
+    UserRole.SERVICE_PROVIDER -> Routes.SERVICE_PROVIDER_HOME
+    UserRole.ADMIN -> Routes.ADMIN_HOME
+    else -> Routes.DOG_OWNER_HOME
 }
+
+private val enterTransition  = slideInHorizontally { it } + fadeIn()
+private val exitTransition   = slideOutHorizontally { -it } + fadeOut()
+private val popEnterTransition = slideInHorizontally { -it } + fadeIn()
+private val popExitTransition  = slideOutHorizontally { it } + fadeOut()
 
 @Composable
 fun NavGraph(
     navController: NavHostController,
-    startDestination: String
+    startDestination: String,
 ) {
     val authViewModel: AuthViewModel = viewModel()
 
-    NavHost(navController = navController, startDestination = startDestination) {
+    NavHost(
+        navController    = navController,
+        startDestination = startDestination,
+        enterTransition  = { enterTransition },
+        exitTransition   = { exitTransition },
+        popEnterTransition  = { popEnterTransition },
+        popExitTransition   = { popExitTransition },
+    ) {
 
         composable(Routes.SPLASH) {
             SplashScreen(
                 onDestinationReady = { route ->
-                    navController.navigate(route) {
-                        popUpTo(Routes.SPLASH) { inclusive = true }
-                    }
-                }
+                    navController.navigate(route) { popUpTo(Routes.SPLASH) { inclusive = true } }
+                },
             )
         }
 
         composable(Routes.LOGIN) {
             LoginScreen(
                 onLoginSuccess = { role ->
-                    navController.navigate(homeRouteForRole(role)) {
-                        popUpTo(Routes.LOGIN) { inclusive = true }
-                    }
+                    navController.navigate(homeRouteForRole(role)) { popUpTo(Routes.LOGIN) { inclusive = true } }
                 },
-                onNavigateToRegister = {
-                    navController.navigate(Routes.REGISTER)
-                },
-                authViewModel = authViewModel
+                onNavigateToRegister = { navController.navigate(Routes.REGISTER) },
+                authViewModel = authViewModel,
             )
         }
 
         composable(Routes.REGISTER) {
             RegisterScreen(
                 onRegisterSuccess = { role ->
-                    navController.navigate(homeRouteForRole(role)) {
-                        popUpTo(Routes.LOGIN) { inclusive = true }
-                    }
+                    navController.navigate(homeRouteForRole(role)) { popUpTo(Routes.LOGIN) { inclusive = true } }
                 },
-                onNavigateToLogin = {
-                    navController.popBackStack()
-                },
-                authViewModel = authViewModel
+                onNavigateToLogin = { navController.popBackStack() },
+                authViewModel = authViewModel,
             )
         }
 
@@ -108,25 +112,13 @@ fun NavGraph(
             DogOwnerHomeScreen(
                 onLogout = {
                     authViewModel.logout()
-                    navController.navigate(Routes.LOGIN) {
-                        popUpTo(Routes.DOG_OWNER_HOME) { inclusive = true }
-                    }
+                    navController.navigate(Routes.LOGIN) { popUpTo(Routes.DOG_OWNER_HOME) { inclusive = true } }
                 },
-                onNavigateToDogs = {
-                    navController.navigate(Routes.DOG_LIST)
-                },
-                onNavigateToReminders = {
-                    navController.navigate(Routes.REMINDER_LIST)
-                },
-                onNavigateToMeetups = {
-                    navController.navigate(Routes.MEETUP_LIST)
-                },
-                onNavigateToProviders = {
-                    navController.navigate(Routes.BROWSE_PROVIDERS)
-                },
-                onNavigateToAiChat = {
-                    navController.navigate(Routes.AI_CHAT)
-                }
+                onNavigateToDogs      = { navController.navigate(Routes.DOG_LIST) },
+                onNavigateToReminders = { navController.navigate(Routes.REMINDER_LIST) },
+                onNavigateToMeetups   = { navController.navigate(Routes.MEETUP_LIST) },
+                onNavigateToProviders = { navController.navigate(Routes.BROWSE_PROVIDERS) },
+                onNavigateToAiChat    = { navController.navigate(Routes.AI_CHAT) },
             )
         }
 
@@ -134,19 +126,11 @@ fun NavGraph(
             ServiceProviderHomeScreen(
                 onLogout = {
                     authViewModel.logout()
-                    navController.navigate(Routes.LOGIN) {
-                        popUpTo(Routes.SERVICE_PROVIDER_HOME) { inclusive = true }
-                    }
+                    navController.navigate(Routes.LOGIN) { popUpTo(Routes.SERVICE_PROVIDER_HOME) { inclusive = true } }
                 },
-                onNavigateToProfile = {
-                    navController.navigate(Routes.PROVIDER_PROFILE)
-                },
-                onNavigateToRequests = {
-                    navController.navigate(Routes.INCOMING_REQUESTS)
-                },
-                onNavigateToSchedule = {
-                    navController.navigate(Routes.MY_SCHEDULE)
-                }
+                onNavigateToProfile  = { navController.navigate(Routes.PROVIDER_PROFILE) },
+                onNavigateToRequests = { navController.navigate(Routes.INCOMING_REQUESTS) },
+                onNavigateToSchedule = { navController.navigate(Routes.MY_SCHEDULE) },
             )
         }
 
@@ -158,114 +142,86 @@ fun NavGraph(
             AdminScreen(
                 onLogout = {
                     authViewModel.logout()
-                    navController.navigate(Routes.LOGIN) {
-                        popUpTo(Routes.ADMIN_HOME) { inclusive = true }
-                    }
-                }
+                    navController.navigate(Routes.LOGIN) { popUpTo(Routes.ADMIN_HOME) { inclusive = true } }
+                },
             )
         }
 
         composable(Routes.PROVIDER_PROFILE) {
-            ServiceProviderProfileScreen(
-                onNavigateBack = { navController.popBackStack() }
-            )
+            ServiceProviderProfileScreen(onNavigateBack = { navController.popBackStack() })
         }
 
         composable(Routes.BROWSE_PROVIDERS) {
             BrowseProvidersScreen(
-                onNavigateToDetail = { providerId ->
-                    navController.navigate("provider_detail/$providerId")
-                },
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateToDetail = { providerId -> navController.navigate("provider_detail/$providerId") },
+                onNavigateBack     = { navController.popBackStack() },
             )
         }
 
         composable(
-            route = Routes.PROVIDER_DETAIL,
-            arguments = listOf(
-                navArgument("providerId") { type = NavType.StringType }
-            )
+            route     = Routes.PROVIDER_DETAIL,
+            arguments = listOf(navArgument("providerId") { type = NavType.StringType }),
         ) { backStackEntry ->
             val providerId = backStackEntry.arguments?.getString("providerId") ?: return@composable
             ProviderDetailScreen(
-                providerId = providerId,
-                onNavigateBack = { navController.popBackStack() }
+                providerId    = providerId,
+                onNavigateBack = { navController.popBackStack() },
             )
         }
 
         composable(Routes.INCOMING_REQUESTS) {
-            IncomingRequestsScreen(
-                onNavigateBack = { navController.popBackStack() }
-            )
+            IncomingRequestsScreen(onNavigateBack = { navController.popBackStack() })
         }
 
         composable(Routes.DOG_LIST) {
             DogListScreen(
-                onNavigateToAdd = { navController.navigate("add_edit_dog") },
+                onNavigateToAdd  = { navController.navigate("add_edit_dog") },
                 onNavigateToEdit = { dogId -> navController.navigate("add_edit_dog?dogId=$dogId") },
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack   = { navController.popBackStack() },
             )
         }
 
         composable(
-            route = Routes.ADD_EDIT_DOG,
-            arguments = listOf(
-                navArgument("dogId") {
-                    type = NavType.StringType
-                    nullable = true
-                    defaultValue = null
-                }
-            )
+            route     = Routes.ADD_EDIT_DOG,
+            arguments = listOf(navArgument("dogId") { type = NavType.StringType; nullable = true; defaultValue = null }),
         ) { backStackEntry ->
-            val dogId = backStackEntry.arguments?.getString("dogId")
             AddEditDogScreen(
-                dogId = dogId,
-                onNavigateBack = { navController.popBackStack() }
+                dogId          = backStackEntry.arguments?.getString("dogId"),
+                onNavigateBack = { navController.popBackStack() },
             )
         }
 
         composable(Routes.REMINDER_LIST) {
             ReminderListScreen(
-                onNavigateToAdd = { navController.navigate("add_edit_reminder") },
+                onNavigateToAdd  = { navController.navigate("add_edit_reminder") },
                 onNavigateToEdit = { reminderId -> navController.navigate("add_edit_reminder?reminderId=$reminderId") },
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack   = { navController.popBackStack() },
             )
         }
 
         composable(
-            route = Routes.ADD_EDIT_REMINDER,
-            arguments = listOf(
-                navArgument("reminderId") {
-                    type = NavType.StringType
-                    nullable = true
-                    defaultValue = null
-                }
-            )
+            route     = Routes.ADD_EDIT_REMINDER,
+            arguments = listOf(navArgument("reminderId") { type = NavType.StringType; nullable = true; defaultValue = null }),
         ) { backStackEntry ->
-            val reminderId = backStackEntry.arguments?.getString("reminderId")
             AddEditReminderScreen(
-                reminderId = reminderId,
-                onNavigateBack = { navController.popBackStack() }
+                reminderId     = backStackEntry.arguments?.getString("reminderId"),
+                onNavigateBack = { navController.popBackStack() },
             )
         }
 
         composable(Routes.MEETUP_LIST) {
             MeetupListScreen(
                 onNavigateToCreate = { navController.navigate(Routes.CREATE_MEETUP) },
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack     = { navController.popBackStack() },
             )
         }
 
         composable(Routes.CREATE_MEETUP) {
-            CreateMeetupScreen(
-                onNavigateBack = { navController.popBackStack() }
-            )
+            CreateMeetupScreen(onNavigateBack = { navController.popBackStack() })
         }
 
         composable(Routes.AI_CHAT) {
-            AiChatScreen(
-                onNavigateBack = { navController.popBackStack() }
-            )
+            AiChatScreen(onNavigateBack = { navController.popBackStack() })
         }
     }
 }
