@@ -4,6 +4,9 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.navigation.compose.rememberNavController
 import com.example.pet4you.ui.navigation.NavGraph
 import com.example.pet4you.ui.navigation.Routes
@@ -15,9 +18,10 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             Pet4YouTheme {
-
-                val navController = rememberNavController()
-                NavGraph(navController = navController, startDestination = Routes.SPLASH)
+                CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr) {
+                    val navController = rememberNavController()
+                    NavGraph(navController = navController, startDestination = Routes.SPLASH)
+                }
             }
         }
     }
