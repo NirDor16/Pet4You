@@ -34,6 +34,8 @@ All core features must work **independently** of AI availability.
 - Theme config: `ui/theme/Theme.kt` — `dynamicColor = false`, full `LightColorScheme` + `DarkColorScheme` wired
 - TextField text color across the app comes from `colorScheme.onSurface` (Material3) — no per-field override needed
 - Do NOT re-enable `dynamicColor` — it causes TextField text to appear white on Android 12+ devices
+- App forces LTR globally: `CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr)` wraps NavGraph in `MainActivity` — do NOT remove, Hebrew-locale devices flip the entire layout without it
+- Maps deep link pattern: `google.navigation:q=${Uri.encode(location)}` with fallback to `https://maps.google.com/maps?q=` — no API key needed
 
 ## Design System (established 2026-05-18)
 
@@ -315,7 +317,8 @@ Rules use helper functions `isSignedIn()`, `isUser(uid)`, `role()`, `isAdmin()` 
 | #13 | feature/admin | Admin panel — block/unblock users, isBlocked login enforcement, AdminViewModel + AdminScreen, ADMIN routing in NavGraph |
 | #14 | feature/meetup-recommendation | Meetup recommendation — For You tab with breed-based scoring, RecommendState + loadRecommendations() in MeetupViewModel |
 | #15 | feature/ui-upgrade | Full Material 3 UI upgrade — Teal+Amber palette, Nunito font, dark mode, CommonComponents, all 17 screens redesigned, NavGraph slide+fade transitions |
-| WIP | feature/meetup-upgrade | Meetup system upgrade — MeetupDetailScreen (new), 3-tab list (All/My/Recommended), search bar, title + participantLimit fields, shared ViewModel across list/detail/create |
+| #17 | feature/meetup-upgrade | Meetup system upgrade — MeetupDetailScreen (new), 3-tab list (All/My/Recommended), search bar, title + participantLimit fields, shared ViewModel across list/detail/create |
+| #18 | feature/maps-navigation-ltr-fix | LTR layout fix (Hebrew locale) + Navigate button in MeetupDetailScreen opening Google Maps navigation |
 
 ## What's Done ✅ — Backend
 

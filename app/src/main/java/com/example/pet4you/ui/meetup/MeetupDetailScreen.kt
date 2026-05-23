@@ -1,10 +1,13 @@
 package com.example.pet4you.ui.meetup
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -30,6 +33,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -37,7 +41,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.pet4you.data.model.Meetup
@@ -108,6 +114,7 @@ private fun MeetupDetailContent(
     onLeave: () -> Unit,
     onDelete: () -> Unit,
 ) {
+    val context = LocalContext.current
     val dateStr = remember(meetup.dateTime) {
         SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault()).format(Date(meetup.dateTime))
     }
@@ -132,7 +139,34 @@ private fun MeetupDetailContent(
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(meetup.title.ifEmpty { "Meetup" }, style = MaterialTheme.typography.headlineSmall)
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-                InfoRow(icon = Icons.Filled.LocationOn, text = meetup.location)
+                Row(
+                    modifier          = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    InfoRow(
+                        icon     = Icons.Filled.LocationOn,
+                        text     = meetup.location,
+                        modifier = Modifier.weight(1f),
+                    )
+                    TextButton(
+                        onClick = {
+                            val uri = Uri.parse("google.navigation:q=${Uri.encode(meetup.location)}")
+                            val intent = Intent(Intent.ACTION_VIEW, uri)
+                            if (intent.resolveActivity(context.packageManager) != null) {
+                                context.startActivity(intent)
+                            } else {
+                                val fallback = Uri.parse("https://maps.google.com/maps?q=${Uri.encode(meetup.location)}")
+                                context.startActivity(Intent(Intent.ACTION_VIEW, fallback))
+                            }
+                        }
+                    ) {
+                        Text(
+                            text  = "Navigate →",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                }
                 InfoRow(icon = Icons.Filled.CalendarToday, text = dateStr)
                 val participantText = if (meetup.participantLimit > 0)
                     "${meetup.participants.size} / ${meetup.participantLimit} participants"
