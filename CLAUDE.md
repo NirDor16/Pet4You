@@ -10,24 +10,43 @@ It provides a centralized platform for managing all aspects of a dog's life: aut
 Full **Client-Server** architecture:
 
 * **Client**: Android app (Kotlin + Jetpack Compose) — handles UI and sends HTTP requests to the backend
-* **Backend**: Python + Flask — handles business logic, security, and AI integration (deployed on Render)
+* **Backend**: Python + Flask — handles business logic, security, AI integration, and third-party API proxying (deployed on Render)
 * **Database**: Firebase Firestore — stores all core data
 * **Auth**: Firebase Authentication
+* **Storage**: Firebase Storage — dog photos
 
-The client **never** communicates directly with OpenAI. All AI requests go through the backend.
+**Critical rule:** The client **never** communicates directly with any external API (OpenAI, OpenWeatherMap, SerpAPI, etc.). **ALL** third-party API requests go through the backend. API keys live only as Render environment variables — never in the APK or in `local.properties`.
+
 All core features must work **independently** of AI availability.
 
 ## Tech Stack
 
-| Layer           | Technology                                  |
-| --------------- | ------------------------------------------- |
-| Android App     | Kotlin, Jetpack Compose, Android Studio     |
-| Backend         | Python, Flask, Visual Studio Code           |
-| Deployment      | Render (cloud)                              |
-| Database        | Firebase Firestore                          |
-| Authentication  | Firebase Authentication                     |
-| AI              | OpenAI API (API key stored on backend only) |
-| Version Control | Git + GitHub                                |
+| Layer           | Technology                                                      |
+| --------------- | --------------------------------------------------------------- |
+| Android App     | Kotlin, Jetpack Compose, Android Studio                         |
+| Backend         | Python, Flask, Visual Studio Code                               |
+| Deployment      | Render (cloud)                                                  |
+| Database        | Firebase Firestore                                              |
+| Authentication  | Firebase Authentication                                         |
+| Storage         | Firebase Storage (dog photos)                                   |
+| Image Loading   | Coil 2.7.0 (`coil-compose`) — `AsyncImage`, `SubcomposeAsyncImage` |
+| Animations      | Lottie 6.4.0 (`lottie-compose`) — JSON assets in `app/src/main/assets/` |
+| AI              | OpenAI API (key on backend only, via `/chat`)                   |
+| Weather         | OpenWeatherMap API (key on backend only, via `/weather`)        |
+| Dog Parks       | SerpAPI / Google Maps (key on backend only, via `/dog-parks`)   |
+| GPS             | FusedLocationProviderClient (`play-services-location:21.3.0`)  |
+| Dog Photos API  | Dog CEO API (`https://dog.ceo/api/`) — free, no key needed     |
+| Version Control | Git + GitHub                                                    |
+
+## API Key Security Policy
+
+**Never put API keys in the Android app.** The pattern for any new third-party API:
+1. Add the key as a Render environment variable on the backend
+2. Add a backend route that calls the external API and returns the result
+3. Android calls the backend route with `X-API-Key: pet4you-secret-123`
+
+`local.properties` only needs `sdk.dir`. Collaborators need no API keys — just clone and run.
+See `local.properties.example` at project root for the template.
 
 ## UI / Theme Notes
 
@@ -65,21 +84,46 @@ The app uses a unified Material 3 design system. **All new screens must follow t
 - Applied automatically via `MaterialTheme.shapes.*`
 
 ### Reusable Components (`ui/components/CommonComponents.kt`)
-Always use these — do NOT duplicate loading/empty/error patterns:
+Always use these — do NOT duplicate loading/empty/error/success patterns:
 
 | Component | Usage |
 |-----------|-------|
 | `Pet4YouTopBar(title, onBack?, actions?)` | Every screen's top bar |
-| `LoadingBox(modifier?)` | Any loading state |
-| `EmptyState(icon, title, subtitle, modifier?)` | Any empty list |
+| `LoadingBox(modifier?)` | Any loading state — shows Lottie rotating arc, falls back to CircularProgressIndicator |
+| `EmptyState(icon, title, subtitle, modifier?)` | Any empty list — Lottie pulse ring + icon overlay |
 | `ErrorMessage(message, modifier?)` | Any error state — uses `colorScheme.error` |
 | `StatusBadge(label, containerColor, contentColor)` | Colored pill for statuses |
 | `Pet4YouCard(modifier?, onClick?, content)` | Standard ElevatedCard |
 | `InfoRow(icon, text, modifier?, tint?)` | Icon + text row in detail screens |
+| `SuccessOverlay(message?)` | Full-screen Lottie checkmark + message, shown after save/create; call with `return@Screen` to block Scaffold from rendering behind it |
+
+### Lottie Animation Assets (`app/src/main/assets/`)
+| File | Used in | Description |
+|------|---------|-------------|
+| `lottie_loading.json` | `LoadingBox` | Rotating teal arc |
+| `lottie_success.json` | `SuccessOverlay` | Circle pop + white checkmark |
+| `lottie_empty.json` | `EmptyState` | Pulsing ring |
+| `lottie_splash.json` | `SplashScreen` | Bouncing teal circle |
+
+Standard Lottie pattern:
+```kotlin
+val composition by rememberLottieComposition(LottieCompositionSpec.Asset("lottie_X.json"))
+val progress    by animateLottieCompositionAsState(composition, iterations = LottieConstants.IterateForever)
+LottieAnimation(composition, { progress }, modifier = Modifier.size(100.dp))
+```
+Use `iterations = 1` for one-shot animations (success). Always provide a non-Lottie fallback (`CircularProgressIndicator`) in case composition is null.
+
+### Dog Avatar Pattern (DogListScreen + anywhere dogs appear)
+Three-tier fallback, in order:
+1. Custom uploaded photo (Firebase Storage URL) → `AsyncImage`
+2. No custom photo + breed mapped in `DogCeoRepository` → Dog CEO API breed photo → `AsyncImage`
+3. No match → letter circle (`Box` with `CircleShape` + `primaryContainer`, first letter of breed)
+
+Use `produceState<String?>(null, dog.breed)` to fetch Dog CEO URL per card. `DogCeoRepository` is a Kotlin `object` with `ConcurrentHashMap` cache — same breed fetched once per app session.
 
 ### Card Style
 - Use `ElevatedCard` with `elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)`
-- Avatar circles: `Box` with `CircleShape` + `primaryContainer` background, first letter of name
+- Avatar circles: `Box` with `CircleShape` + `primaryContainer` background, first letter of name (see Dog Avatar Pattern for dogs)
 
 ### Navigation Transitions
 - All routes in `NavGraph.kt` use `slideInHorizontally + fadeIn` / `slideOutHorizontally + fadeOut`
@@ -93,6 +137,22 @@ Always use these — do NOT duplicate loading/empty/error patterns:
 ### Chat Bubble Colors
 - User bubble: `MaterialTheme.colorScheme.primary` / text: `onPrimary`
 - AI bubble: `MaterialTheme.colorScheme.surfaceVariant` / text: `onSurface`
+
+### SuccessOverlay + Navigation Pattern
+After a successful save/create action, show `SuccessOverlay` then navigate back:
+```kotlin
+// In composable (before Scaffold):
+if (actionState is XActionState.Success) {
+    SuccessOverlay(message = "Done!")
+    return@ScreenComposable
+}
+// In LaunchedEffect:
+if (actionState is XActionState.Success) {
+    delay(1400)
+    viewModel.resetActionState()
+    onNavigateBack()
+}
+```
 
 ## User Roles
 
@@ -126,9 +186,9 @@ All provider types share the same UI, but providerType is used for filtering and
 ## Core Data Models (Firestore)
 
 * **users**: uid, fullName, email, role, isBlocked, createdAt
-* **dogs**: dogId, ownerId, name, breed, birthDate, notes
+* **dogs**: dogId, ownerId, name, breed, birthDate, notes, photoUrl (Firebase Storage URL; empty string = no photo)
 * **reminders**: reminderId, ownerId, dogId, type, dateTime, frequency, status (ACTIVE/DONE)
-* **meetups**: meetupId, creatorId, title, location, dateTime, description, participants[], dogBreeds[], participantLimit (0=unlimited), createdAt — `recommendationScore` is transient (not in Firestore, populated from backend API)
+* **meetups**: meetupId, creatorId, title, location, dateTime, description, participants[], dogBreeds[], participantLimit (0=unlimited), createdAt — `recommendationScore` is transient (not in Firestore, `@get:Exclude`, populated from `/recommend-meetups` response)
 * **serviceProviders**: serviceProviderId (=uid), providerType, fullName, email, description, location, isAvailable, createdAt
 * **serviceRequests**: requestId, dogOwnerId, serviceProviderId, dogId, providerType, message, status (PENDING/APPROVED/REJECTED), createdAt, scheduledAt
 
@@ -139,7 +199,7 @@ UI (Compose Screens)
         ↓
 ViewModel (state management)
         ↓
-Repository (Firebase + backend API)
+Repository (Firebase + backend API + Dog CEO API)
         ↓
 Data Models
 ```
@@ -150,51 +210,57 @@ Data Models
 com/example/pet4you/
 ├── data/model/
 │   ├── User.kt            (+ UserRole: DOG_OWNER, SERVICE_PROVIDER, ADMIN)
-│   ├── Dog.kt
+│   ├── Dog.kt             (photoUrl: String = "")
+│   ├── DogBreeds.kt       (DOG_BREEDS list — 60+ breeds, used by BreedSelector)
 │   ├── Reminder.kt        (+ ReminderType, ReminderFrequency, ReminderStatus)
-│   ├── Meetup.kt          (title, location, dateTime, description, participants[], dogBreeds[], participantLimit, createdAt, recommendationScore?)
+│   ├── Meetup.kt          (title, location, dateTime, description, participants[], dogBreeds[], participantLimit, createdAt, recommendationScore? @get:Exclude)
 │   ├── ServiceProvider.kt (+ ProviderType: VET, DOG_SITTER, GROOMER)
 │   ├── ServiceRequest.kt  (+ RequestStatus: PENDING, APPROVED, REJECTED)
 │   └── ChatMessage.kt     (role: String, content: String)
 ├── network/
-│   ├── ApiClient.kt       (Retrofit singleton + OkHttp X-API-Key interceptor)
-│   └── ApiService.kt      (ChatRequest, ChatResponse, RecommendMeetupsRequest/Response, POST /chat + POST /recommend-meetups)
+│   ├── ApiClient.kt       (Retrofit singleton, baseUrl = pet4you-backend.onrender.com, OkHttp X-API-Key interceptor)
+│   └── ApiService.kt      (ALL backend request/response models + ALL endpoints:
+│                            POST /chat, POST /recommend-meetups,
+│                            GET /weather?location=, POST /dog-parks {lat,lon})
 ├── repository/
 │   ├── AuthRepository.kt
-│   ├── DogRepository.kt
+│   ├── DogRepository.kt        (+ uploadDogPhoto: Firebase Storage → returns download URL)
 │   ├── ReminderRepository.kt
-│   ├── MeetupRepository.kt
+│   ├── MeetupRepository.kt     (+ getMeetupById)
 │   ├── ServiceProviderRepository.kt
 │   ├── ServiceRequestRepository.kt
-│   └── AiChatRepository.kt
+│   ├── AiChatRepository.kt
+│   ├── DogCeoRepository.kt     (object singleton; breedNameToDogCeoPath() maps 60+ breeds; ConcurrentHashMap cache; clearBreedCache(breed) for refresh)
+│   ├── WeatherRepository.kt    (object singleton; calls ApiClient /weather; bestCityQuery() extracts city from "Park, City" strings; ConcurrentHashMap cache)
+│   └── DogParkRepository.kt   (object singleton; calls ApiClient /dog-parks with lat/lon)
 ├── viewmodel/
 │   ├── AuthViewModel.kt
-│   ├── DogViewModel.kt
+│   ├── DogViewModel.kt         (addDog/updateDog accept photoUri: Uri? → uploads before saving)
 │   ├── ReminderViewModel.kt
-│   ├── MeetupViewModel.kt
+│   ├── MeetupViewModel.kt      (+ MeetupDetailState, loadMeetupById, join/leave/deleteMeetupFromDetail, RecommendState, loadRecommendations via Dijkstra backend)
 │   ├── ServiceProviderViewModel.kt
 │   ├── BrowseProvidersViewModel.kt
 │   ├── ProviderDetailViewModel.kt
 │   ├── IncomingRequestsViewModel.kt
-│   ├── AiChatViewModel.kt (sealed ChatState + StateFlow messages)
+│   ├── AiChatViewModel.kt      (sealed ChatState + StateFlow messages)
 │   └── MyScheduleViewModel.kt
 ├── ui/
 │   ├── auth/
 │   │   ├── LoginScreen.kt
-│   │   └── RegisterScreen.kt  (role + providerType selection)
+│   │   └── RegisterScreen.kt       (role + providerType selection)
 │   ├── home/
 │   │   ├── DogOwnerHomeScreen.kt
 │   │   └── ServiceProviderHomeScreen.kt
 │   ├── dog/
-│   │   ├── DogListScreen.kt
-│   │   └── AddEditDogScreen.kt
+│   │   ├── DogListScreen.kt        (DogAvatar: custom photo → Dog CEO breed photo → letter fallback)
+│   │   └── AddEditDogScreen.kt     (88dp photo circle picker; BreedInspirationCard from Dog CEO when breed set + no photo)
 │   ├── reminder/
 │   │   ├── ReminderListScreen.kt
 │   │   └── AddEditReminderScreen.kt
 │   ├── meetup/
-│   │   ├── MeetupListScreen.kt    (3 tabs: All / My Meetups / Recommended + search bar)
-│   │   ├── MeetupDetailScreen.kt  (full detail: info cards, dog breeds chips, join/leave/delete)
-│   │   └── CreateMeetupScreen.kt  (title + location required, participantLimit optional)
+│   │   ├── MeetupListScreen.kt     (3 tabs: All / My Meetups / Recommended + search bar on All tab)
+│   │   ├── MeetupDetailScreen.kt   (info card + WeatherCard for meetup location + description + dog breeds + action button)
+│   │   └── CreateMeetupScreen.kt   (title + location + "Find nearby dog parks" button → GPS → /dog-parks → ModalBottomSheet → auto-fill location)
 │   ├── serviceprovider/
 │   │   ├── ServiceProviderProfileScreen.kt
 │   │   ├── BrowseProvidersScreen.kt
@@ -204,29 +270,41 @@ com/example/pet4you/
 │   ├── admin/
 │   │   └── AdminScreen.kt
 │   ├── chat/
-│   │   └── AiChatScreen.kt    (WhatsApp-style bubbles)
+│   │   └── AiChatScreen.kt         (WhatsApp-style bubbles)
 │   ├── splash/
-│   │   └── SplashScreen.kt
+│   │   └── SplashScreen.kt         (Lottie bouncing animation + "Pet4You" title)
+│   ├── components/
+│   │   └── CommonComponents.kt     (Pet4YouTopBar, LoadingBox, EmptyState, ErrorMessage, StatusBadge, Pet4YouCard, InfoRow, SuccessOverlay, BreedSelector)
 │   ├── navigation/
 │   │   └── NavGraph.kt
 │   └── theme/
-└── MainActivity.kt
+│       ├── Color.kt    (md_light_* / md_dark_* M3 tonal palette)
+│       ├── Type.kt     (Nunito Google Font, full M3 scale)
+│       ├── Shape.kt    (8/12/16/24/32dp)
+│       └── Theme.kt    (dynamicColor=false, responds to dark mode)
+└── MainActivity.kt     (CompositionLocalProvider LTR wrap)
+
+app/src/main/assets/
+├── lottie_loading.json
+├── lottie_success.json
+├── lottie_empty.json
+└── lottie_splash.json
 ```
 
 ## Navigation Flow
 
 ```
-App opens → SplashScreen → checks Firebase Auth
-                ↓                     ↓
-           not logged in          logged in → fetch role → home screen
+App opens → SplashScreen (Lottie) → checks Firebase Auth
+                ↓                          ↓
+           not logged in            logged in → fetch role → home screen
                 ↓
            LoginScreen ↔ RegisterScreen
                 ↓
    DOG_OWNER → DogOwnerHomeScreen
                  ├── My Dogs → DogListScreen → AddEditDogScreen
                  ├── Reminders → ReminderListScreen → AddEditReminderScreen
-                 ├── Meetups → MeetupListScreen → MeetupDetailScreen
-                 │                            → CreateMeetupScreen
+                 ├── Meetups → MeetupListScreen → MeetupDetailScreen (weather card)
+                 │                            → CreateMeetupScreen (dog park picker)
                  ├── Find Services → BrowseProvidersScreen → ProviderDetailScreen
                  └── AI Chat → AiChatScreen
 
@@ -238,27 +316,46 @@ App opens → SplashScreen → checks Firebase Auth
 
 ## Backend Notes (Flask)
 
-- Entry point: `backend/app.py` — ~90 lines
-- Env vars: `OPENAI_API_KEY` + `API_KEY` in `backend/.env` (gitignored); template in `.env.example`
-- Model: `gpt-4o-mini`; security: `X-API-Key` header check
-- API: `POST /chat` `{ message, history[] }` → `{ reply }` | `GET /health` → `{ status: "ok" }` | `POST /recommend-meetups` `{ dog_breeds, user_id, meetups[] }` → `{ recommendations[] }`
-- Tests: `backend/test_recommend.py` — 8 pytest tests for `score_meetups()`; run with `py -m pytest test_recommend.py -v`
+- Entry point: `backend/app.py` — ~290 lines
+- Dependencies: `flask`, `openai`, `python-dotenv`, `gunicorn`, `requests`
+- Env vars on Render: `OPENAI_API_KEY`, `API_KEY`, `OPENWEATHER_API_KEY`, `SERP_API_KEY`
+- Local `.env` (gitignored): same vars; template in `backend/.env.example`
+- Security: `X-API-Key` header checked on every route via `check_api_key()`
+- Algorithm: `dijkstra_recommend()` — weighted graph, Dijkstra shortest path → meetup scores
+- Tests: `backend/test_recommend.py` — pytest; run with `py -m pytest test_recommend.py -v`
 - Local run: `cd backend && source venv/Scripts/activate && python app.py`
-- ⚠️ Windows gotcha: always run with `debug=False`. `debug=True` spawns Werkzeug child processes that survive pkill — stale processes accumulate on port 5000 with stale env vars. Kill all: PowerShell `Get-Process python | Stop-Process -Force`
+- ⚠️ Windows: always `debug=False`. `debug=True` → Werkzeug spawns child processes that survive, accumulate on port 5000. Kill all: `Get-Process python | Stop-Process -Force`
 
-## Backend — Deployed (Render)
+## Backend API Reference
 
-- **URL:** `https://pet4you-backend.onrender.com`
-- **POST /chat** — request: `{ "message": "...", "history": [{"role":"user/assistant","content":"..."}] }` → response: `{ "reply": "..." }`
-- **Header:** `X-API-Key: pet4you-secret-123`
-- Free tier: first request after inactivity may take ~30s (cold start)
+**Base URL (deployed):** `https://pet4you-backend.onrender.com`
+**Header required:** `X-API-Key: pet4you-secret-123`
+**Free tier:** first request after inactivity ~30s cold start
+
+| Method | Route | Request | Response |
+|--------|-------|---------|----------|
+| GET | `/health` | — | `{ status: "ok" }` |
+| POST | `/chat` | `{ message, history[] }` | `{ reply }` |
+| POST | `/recommend-meetups` | `{ dog_breeds[], user_id, meetups[] }` | `{ recommendations[] }` — each meetup has `score` field |
+| GET | `/weather` | `?location={city}` | OpenWeatherMap response (main, weather[], wind, name) |
+| POST | `/dog-parks` | `{ lat, lon }` | `{ local_results[] }` — SerpAPI parks (title, address, rating, reviews) |
+
+**Adding a new backend route** — always follow this pattern:
+```python
+@app.route("/my-route", methods=["POST"])
+def my_route():
+    if not check_api_key():
+        return jsonify({"error": "Unauthorized"}), 401
+    data = request.get_json(silent=True) or {}
+    # ... call external API with os.environ.get("MY_API_KEY") ...
+    return jsonify(result)
+```
+Then add the corresponding method to `network/ApiService.kt` and a repository.
 
 ## Firestore Security Rules
 
 Rules are configured in Firebase Console → Firestore → Rules tab.
-⚠️ The original test-mode rules expired 2026-05-11 — replaced with production rules on 2026-05-12.
-
-Current rules enforce:
+Production rules active since 2026-05-12.
 
 | Collection | Read | Write |
 |---|---|---|
@@ -269,20 +366,34 @@ Current rules enforce:
 | `serviceProviders` | any signed-in user | provider updates own doc (uid == providerId); ADMIN deletes |
 | `serviceRequests` | dogOwnerId or serviceProviderId or ADMIN | dogOwner creates; both sides update; dogOwner or ADMIN deletes |
 
-Rules use helper functions `isSignedIn()`, `isUser(uid)`, `role()`, `isAdmin()` — `role()` does a `get()` on the user document to read the `role` field.
+Rules use helper functions `isSignedIn()`, `isUser(uid)`, `role()`, `isAdmin()` — `role()` does a `get()` on the user document.
 
-## Gradle Commands (Android)
+## Firebase Storage Rules
+
+Configured in Firebase Console → Storage → Rules.
+```
+match /dog_photos/{userId}/{photo} {
+    allow read:  if request.auth != null;
+    allow write: if request.auth != null && request.auth.uid == userId;
+}
+```
+
+## Gradle / Build Notes
 
 - `./gradlew testDebugUnitTest` — run JVM unit tests
 - `./gradlew assembleDebug` — compile check (full debug build)
-- ⚠️ `local.properties` is gitignored — must be copied manually into git worktrees
-- Pre-existing deprecation warnings (safe to ignore): `ProviderDetailScreen.kt`, `ServiceProviderProfileScreen.kt`, `CreateMeetupScreen.kt`, `MeetupDetailScreen.kt` — all about `Icons.Filled.Notes` / `menuAnchor()`; not breaking
+- `./gradlew clean assembleDebug` — use when incremental build fails (stale cache error about `!intermediateDir.isDirectory()`)
+- `local.properties` is gitignored — only needs `sdk.dir`, no API keys
+- `local.properties.example` is committed — template for collaborators
+- `buildConfig = true` in `build.gradle.kts` buildFeatures (required for `BuildConfig` class)
+- Pre-existing deprecation warnings (safe to ignore): `Icons.Filled.Notes`, `Icons.Filled.ExitToApp`, `menuAnchor()` — not breaking
 
 ## Git Workflow
 
 * `master` = stable branch
 * Each feature = separate branch from master
 * Pull → branch → develop → commit → push → PR → merge to master
+* Always open a new branch before starting a feature
 
 **Tools:**
 - Android app → **Android Studio**
@@ -299,6 +410,7 @@ Rules use helper functions `isSignedIn()`, `isUser(uid)`, `role()`, `isAdmin()` 
 * Do not assume missing requirements — ask for clarification if needed
 * When working on a specific layer, do not implement other layers unless explicitly requested
 * AI is supplementary — never make core features depend on AI availability
+* **All third-party API keys go to Render environment variables only — never in the APK**
 
 ## What's Done ✅ — Android (all merged to master)
 
@@ -312,13 +424,21 @@ Rules use helper functions `isSignedIn()`, `isUser(uid)`, `role()`, `isAdmin()` 
 | #6 | feature/service-provider-profile | SERVICE_PROVIDER edits own profile |
 | #7 | feature/service-requests | Browse providers, send request (dialog + dog picker), approve/reject |
 | #8 | fix/textfield-text-color | TextField text visible — disable dynamicColor, explicit onSurface |
-| #11 | feature/ai-chat | Android AI Chat — Retrofit + MVVM + bubble UI (ChatMessage, ApiClient, ApiService, AiChatRepository, AiChatViewModel, AiChatScreen) |
-| #12 | feature/my-schedule | My Schedule — scheduledAt field on ServiceRequest, DatePicker+TimePicker on approve, MyScheduleViewModel + MyScheduleScreen (sorted by date) |
-| #13 | feature/admin | Admin panel — block/unblock users, isBlocked login enforcement, AdminViewModel + AdminScreen, ADMIN routing in NavGraph |
-| #14 | feature/meetup-recommendation | Meetup recommendation — For You tab with breed-based scoring, RecommendState + loadRecommendations() in MeetupViewModel |
-| #15 | feature/ui-upgrade | Full Material 3 UI upgrade — Teal+Amber palette, Nunito font, dark mode, CommonComponents, all 17 screens redesigned, NavGraph slide+fade transitions |
-| #17 | feature/meetup-upgrade | Meetup system upgrade — MeetupDetailScreen (new), 3-tab list (All/My/Recommended), search bar, title + participantLimit fields, shared ViewModel across list/detail/create |
-| #18 | feature/maps-navigation-ltr-fix | LTR layout fix (Hebrew locale) + Navigate button in MeetupDetailScreen opening Google Maps navigation |
+| #11 | feature/ai-chat | Android AI Chat — Retrofit + MVVM + bubble UI |
+| #12 | feature/my-schedule | My Schedule — scheduledAt field, DatePicker+TimePicker on approve, MyScheduleScreen |
+| #13 | feature/admin | Admin panel — block/unblock users, isBlocked login enforcement |
+| #14 | feature/meetup-recommendation | For You tab with breed-based scoring via backend |
+| #15 | feature/ui-upgrade | Full Material 3 upgrade — Teal+Amber, Nunito, dark mode, CommonComponents, 17 screens |
+| #17 | feature/meetup-upgrade | MeetupDetailScreen, 3-tab list, search, title + participantLimit fields |
+| #18 | feature/maps-navigation-ltr-fix | LTR layout fix + Navigate button → Google Maps |
+| #19 | feature/breed-selector | BreedSelector autocomplete component in CommonComponents |
+| #20 | feature/dijkstra-recommendation | Dijkstra algorithm upgrade for meetup recommendations |
+| #21 | feature/dog-photos | Dog photo upload — Firebase Storage + Coil AsyncImage; `photoUrl` field on Dog model |
+| #22 | feature/lottie-animations | Lottie animations — LoadingBox, EmptyState, SuccessOverlay, SplashScreen |
+| #23 | feature/dog-ceo-api | Dog CEO API — breed photos in DogListScreen avatars + BreedInspirationCard in AddEditDog |
+| #24 | feature/weather | OpenWeatherMap weather card in MeetupDetailScreen (via backend proxy) |
+| #25 | feature/dog-park-picker | Nearby dog parks in CreateMeetupScreen — GPS + SerpAPI + ModalBottomSheet (via backend proxy) |
+| #26 | feature/backend-proxy | Move all API keys to Render — Android calls backend only; deleted WeatherApiService + SerpApiService |
 
 ## What's Done ✅ — Backend
 
@@ -326,125 +446,66 @@ Rules use helper functions `isSignedIn()`, `isUser(uid)`, `role()`, `isAdmin()` 
 |----|--------|---------|
 | #9 | feature/flask-backend | Flask app.py + POST /chat + OpenAI gpt-4o-mini + API key auth |
 | #10 | feature/render-deploy | Render deploy — backend live at https://pet4you-backend.onrender.com |
-| #14 | feature/meetup-recommendation | POST /recommend-meetups — score_meetups() algorithm + 8 pytest tests |
+| #14 | feature/meetup-recommendation | POST /recommend-meetups — Dijkstra-based scoring algorithm |
+| #26 | feature/backend-proxy | GET /weather (→ OpenWeatherMap) + POST /dog-parks (→ SerpAPI); `requests` library added |
 
 ## What's Done ✅ — Firebase / Infrastructure
 
 | Date | Item |
 |------|------|
-| 2026-05-12 | Firestore Security Rules — replaced expired test-mode rules with production rules scoped per collection and role |
+| 2026-05-12 | Firestore Security Rules — production rules scoped per collection and role |
+| 2026-05-24 | Firebase Storage Rules — dog_photos/{userId}/{photo} — owner write, any auth read |
+| 2026-05-24 | Render env vars — OPENWEATHER_API_KEY + SERP_API_KEY added to backend service |
 
-## Future Work 🔮 — Meetup Recommendation Algorithm
+## Future Work 🔮
 
-The recommendation system is **partially implemented** — the infrastructure is ready, only the backend scoring logic needs expanding.
+### Recommendation Algorithm — Extend Scoring
+The Dijkstra-based algorithm is live. To improve it (backend only — `dijkstra_recommend()` in `app.py`):
+- **Location proximity**: smaller edge weight if meetup city matches user's city
+- **Past attendance**: lower weight for locations the user has visited before
+- **Dog age matching**: boost meetups where breed sizes are compatible
 
-### What's Already in Place
-| Layer | What exists |
-|-------|------------|
-| Backend | `score_meetups()` in `backend/app.py` — currently scores: breed match=1.0, open meetup=0.5, no match=excluded |
-| Backend | `POST /recommend-meetups` endpoint — stateless, receives meetups + breeds from Android |
-| Android ViewModel | `RecommendState` sealed class + `loadRecommendations()` in `MeetupViewModel` |
-| Android Model | `recommendationScore: Float?` field on `Meetup` — annotated `@get:Exclude` (not stored in Firestore; populated from API response when backend sends it) |
-| Android UI | "Recommended" tab in `MeetupListScreen` — already wired and displayed |
+When the backend returns a `score` field per meetup in `/recommend-meetups`, add `@SerializedName("score")` to `recommendationScore` in `Meetup.kt` to surface "Match 87%" badges in the Recommended tab UI.
 
-### How to Extend the Algorithm (backend only)
-The Android side is ready — only `score_meetups()` in `backend/app.py` needs changes:
-- **Location proximity**: score by distance if meetup location matches user's city/area
-- **Date preference**: boost upcoming meetups within the user's preferred window
-- **Dog size/age**: match meetup's `dogBreeds` list to similar-sized breeds
-- **Past history**: boost meetups in locations the user has attended before
-
-When the backend starts returning a `score` field per meetup in the JSON response, add `@SerializedName("score")` to `recommendationScore` in `Meetup.kt` to surface it in the UI (e.g., "Match 87%" badge on Recommended cards).
-
-## What's NOT Done Yet ❌ — Remaining Roadmap
-
-No remaining core features. See "Future Work" above for the recommendation algorithm next step.
+### Dog CEO API — More Breeds
+`DogCeoRepository.breedNameToDogCeoPath()` currently maps ~60 breeds. Unmapped breeds fall back to the letter avatar. Add more mappings as needed — the Dog CEO API breed list is at `https://dog.ceo/api/breeds/list/all`.
 
 ## Project History & Status
 
-### 2026-04-11 — Initial Setup
-* Created Android project, connected to GitHub
-
-### 2026-04-11 — Foundation Complete (PR #1 → master)
-* Dependencies, MVVM structure, Auth, role-based navigation
-
-### 2026-04-12 — Data Models + Requirements Aligned (PR #2 → master)
-* ServiceProvider.kt, ServiceRequest.kt, updated Meetup.kt, RegisterScreen providerType
+### 2026-04-11 — Foundation Complete (PRs #1–#2 → master)
+* Firebase Auth, Firestore, MVVM structure, Navigation, full data models
 
 ### 2026-04-12 — Dog Profiles (PR #3 → master)
 * DogRepository + DogViewModel + DogListScreen + AddEditDogScreen
 
-### 2026-04-22 — Reminders (PR #4 → master)
-* ReminderRepository + ReminderViewModel (dogMap) + ReminderListScreen + AddEditReminderScreen
+### 2026-04-22 — Reminders + Meetups (PRs #4–#5 → master)
+* Full CRUD for reminders (with dog picker) and meetups
 
-### 2026-04-22 — Meetups (PR #5 → master)
-* MeetupRepository + MeetupViewModel + MeetupListScreen + CreateMeetupScreen
+### 2026-04-27 — Service Layer (PRs #6–#7, #9 → master)
+* Service provider profile, service requests flow, Flask backend + /chat
 
-### 2026-04-27 — Service Provider Profile (PR #6 → master)
-* ServiceProviderRepository + ServiceProviderViewModel + ServiceProviderProfileScreen
+### 2026-05-04 — AI Chat + Render Deploy (PRs #10–#11 → master)
+* Backend deployed to Render; Android AI Chat with Retrofit + bubble UI
 
-### 2026-04-27 — Service Requests (PR #7 → master)
-* ServiceRequestRepository + 3 ViewModels + BrowseProvidersScreen + ProviderDetailScreen + IncomingRequestsScreen
+### 2026-05-08 — Admin + Schedule + Recommendations (PRs #12–#14 → master)
+* Admin panel (block/unblock), My Schedule with date picker, meetup recommendations
 
-### 2026-04-27 — Flask Backend (PR #9 → master)
-* backend/app.py — POST /chat + GET /health, gpt-4o-mini, X-API-Key auth, client-side history
+### 2026-05-12 — Firestore Security Rules
+* Production rules replacing expired test-mode rules
 
-### 2026-05-04 — Render Deploy (PR #10 → master)
-* render.yaml added, backend deployed to https://pet4you-backend.onrender.com ✅
+### 2026-05-18 — UI Upgrade + Meetup System (PRs #15, #17–#18 → master)
+* Full Material 3 redesign (Teal+Amber, Nunito, dark mode, CommonComponents)
+* MeetupDetailScreen, 3-tab list, search, Google Maps navigation, LTR fix
 
-### 2026-05-04 — Android AI Chat (PR #11 → master)
-* ChatMessage + ApiClient + ApiService + AiChatRepository + AiChatViewModel + AiChatScreen
-* Retrofit 2.9.0 + Gson, OkHttp interceptor for X-API-Key header
-* WhatsApp-style bubble UI, conversation history in ViewModel only (no Firestore persistence)
-
-### 2026-05-08 — Admin Panel (PR #13 → master)
-* isUserBlocked() check injected into AuthViewModel.login() — blocked users get error + auto-logout
-* AuthRepository: getAllUsers(), setUserBlocked(), isUserBlocked()
-* AdminViewModel + AdminScreen (ui/admin/) — list all users with Block/Unblock buttons + status badges
-* homeRouteForRole() updated: ADMIN → admin_home route
-* Admin accounts created manually via Firebase Console (no self-registration)
-
-### 2026-05-08 — My Schedule (PR #12 → master)
-* scheduledAt: Long field added to ServiceRequest (default 0L, backward-compatible with Firestore)
-* Approve flow: DatePickerDialog (Material3) → TimePickerDialog (android.app) → saves scheduledAt to Firestore
-* MyScheduleViewModel + MyScheduleScreen — APPROVED requests sorted by scheduledAt, LazyColumn of ScheduleCard
-* My Schedule card wired in ServiceProviderHomeScreen + NavGraph route added
-
-### 2026-05-08 — Meetup Recommendation (PR #14 → master)
-* Backend: score_meetups() — breed match=1.0, open meetup=0.5, no match=excluded; sorted score DESC / dateTime ASC
-* Backend: POST /recommend-meetups endpoint — same X-API-Key auth, stateless (Android sends meetups + breeds)
-* Backend: test_recommend.py — 8 pytest tests, all passing
-* Android: RecommendMeetupsRequest/Response + Retrofit endpoint in ApiService.kt
-* Android: RecommendState sealed class + loadRecommendations() in MeetupViewModel
-* Android: TabRow ("All Meetups" / "For You") in MeetupListScreen — lazy-loads on tab switch
-
-### 2026-05-12 — Firestore Security Rules (Firebase Console)
-* Test-mode rules expired (were set to allow all until 2026-05-11)
-* Replaced with production security rules scoped per collection and role
-* Rules enforce: authenticated-only access, owners manage own data, ADMIN has elevated permissions, serviceRequests visible only to the two parties involved
-
-### 2026-05-18 — UI Upgrade (on master, no separate PR)
-* **Design System**: `ui/theme/Color.kt` — full M3 Teal+Amber tonal palette (light + dark); `ui/theme/Type.kt` — Nunito Google Font, full type scale; `ui/theme/Shape.kt` — rounded shape tokens (8–32dp); `ui/theme/Theme.kt` — wires colors/type/shapes, responds to dark mode
-* **CommonComponents**: `ui/components/CommonComponents.kt` — `Pet4YouTopBar`, `LoadingBox`, `EmptyState`, `ErrorMessage`, `StatusBadge`, `Pet4YouCard`, `InfoRow`
-* **All 17 screens upgraded**: hardcoded colors → theme tokens, `Card` → `ElevatedCard`, raw TopAppBar → `Pet4YouTopBar`, inline loading/error/empty → CommonComponents
-* **Home screens**: gradient header (primary→primaryContainer), icon-led feature cards
-* **Auth screens**: Pet4You branding (Pets icon + title), leading icons in TextFields
-* **Chat**: theme colors for user/AI bubbles, `OutlinedTextField` + `FilledIconButton` for input
-* **Splash**: animated Pets icon + "Pet4You" title (fade + scale)
-* **MyScheduleScreen**: CalendarMonth icon, timeline-style left-accent card
-* **AdminScreen**: theme status badges (primaryContainer/errorContainer) replacing hardcoded green/red
-* **ProviderDetailScreen**: header ElevatedCard with type badge, `HorizontalDivider`, `InfoRow` for details
-* **NavGraph**: global slide+fade transitions on all routes (300ms)
-* Google Fonts dependency added: `androidx.compose.ui:ui-text-google-fonts` (falls back to Roboto if GMS unavailable)
-
-### 2026-05-18 — Meetup System Upgrade (feature/meetup-upgrade, WIP)
-* **Data model**: `Meetup.kt` — added `title` (required), `participantLimit` (0=unlimited), `createdAt`, `recommendationScore: Float?` (`@get:Exclude` — not stored in Firestore, infrastructure for future scoring UI)
-* **Repository**: `MeetupRepository.kt` — updated `createMeetup` signature, added `getMeetupById`
-* **ViewModel**: `MeetupViewModel.kt` — added `MeetupDetailState`, `_detailState`, `loadMeetupById`; added `joinMeetupFromDetail` / `leaveMeetupFromDetail` / `deleteMeetupFromDetail` (set `MeetupActionState.Success` for detail screen; also refresh list in background); refactored to `refreshMeetupList()` private suspend fun
-* **MeetupListScreen**: 3 tabs (All / My Meetups / Recommended); search bar on All tab (client-side filter by title/location/description); cards are clickable (navigate to detail); `StatusBadge` for "Your meetup" / "Joined"
-* **CreateMeetupScreen**: added Title field (required), Participant Limit field (optional, numeric)
-* **MeetupDetailScreen** (new): header ElevatedCard (title + location + date + participant count), description card, dog breeds `FlowRow` with `AssistChip`; bottom action button adapts to role (Join / Leave / Delete); join/leave → reload detail; delete → navigate back
-* **NavGraph**: `MEETUP_DETAIL = "meetup_detail/{meetupId}"` route added; all 3 meetup composables share the same `MeetupViewModel` instance via `viewModel(meetupListEntry)` so list refreshes automatically when returning from detail/create
+### 2026-05-24 — External APIs + Animations (PRs #19–#26 → master)
+* **#19** BreedSelector autocomplete component
+* **#20** Dijkstra recommendation algorithm upgrade
+* **#21** Dog photo upload — Firebase Storage + Coil; `photoUrl` on Dog model
+* **#22** Lottie animations — loading/success/empty/splash (4 custom JSON assets)
+* **#23** Dog CEO API — breed photos as avatar fallback + BreedInspirationCard with refresh
+* **#24** OpenWeatherMap — weather card in MeetupDetailScreen
+* **#25** Dog park picker — GPS + SerpAPI + ModalBottomSheet → auto-fill meetup location
+* **#26** Backend proxy refactor — ALL third-party keys moved to Render env vars; Android never calls external APIs directly; `local.properties.example` added for collaborators
 
 ---
 
