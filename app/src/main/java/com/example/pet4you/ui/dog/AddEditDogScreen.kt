@@ -1,6 +1,13 @@
 package com.example.pet4you.ui.dog
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -10,9 +17,11 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Notes
 import androidx.compose.material.icons.filled.Pets
 import androidx.compose.material3.Button
@@ -29,9 +38,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.example.pet4you.ui.components.BreedSelector
 import com.example.pet4you.ui.components.LoadingBox
 import com.example.pet4you.ui.components.Pet4YouTopBar
@@ -44,19 +57,26 @@ fun AddEditDogScreen(
     onNavigateBack: () -> Unit,
     viewModel: DogViewModel = viewModel(),
 ) {
-    val isEditMode     = !dogId.isNullOrEmpty()
-    var name           by remember { mutableStateOf("") }
-    var breed          by remember { mutableStateOf("") }
-    var birthDate      by remember { mutableStateOf("") }
-    var notes          by remember { mutableStateOf("") }
-    val dogActionState by viewModel.dogActionState.collectAsState()
+    val isEditMode        = !dogId.isNullOrEmpty()
+    var name              by remember { mutableStateOf("") }
+    var breed             by remember { mutableStateOf("") }
+    var birthDate         by remember { mutableStateOf("") }
+    var notes             by remember { mutableStateOf("") }
+    var existingPhotoUrl  by remember { mutableStateOf("") }
+    var selectedImageUri  by remember { mutableStateOf<Uri?>(null) }
+    val dogActionState    by viewModel.dogActionState.collectAsState()
+
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickVisualMedia()
+    ) { uri -> if (uri != null) selectedImageUri = uri }
 
     LaunchedEffect(dogId) { if (isEditMode) viewModel.loadDog(dogId!!) }
 
     LaunchedEffect(dogActionState) {
         if (isEditMode && dogActionState is DogActionState.DogLoaded) {
             val dog = (dogActionState as DogActionState.DogLoaded).dog
-            name = dog.name; breed = dog.breed; birthDate = dog.birthDate; notes = dog.notes
+            name = dog.name; breed = dog.breed; birthDate = dog.birthDate
+            notes = dog.notes; existingPhotoUrl = dog.photoUrl
         }
         if (dogActionState is DogActionState.Success) {
             viewModel.resetActionState(); onNavigateBack()
@@ -77,14 +97,46 @@ fun AddEditDogScreen(
             LoadingBox()
         } else {
             Column(
-                modifier = Modifier
+                modifier            = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
                     .verticalScroll(rememberScrollState())
                     .imePadding()
                     .padding(24.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
+                // Photo picker circle
+                Box(
+                    modifier         = Modifier
+                        .size(88.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.primaryContainer)
+                        .clickable {
+                            photoPickerLauncher.launch(
+                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                            )
+                        },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    val imageModel = selectedImageUri ?: existingPhotoUrl.takeIf { it.isNotEmpty() }
+                    if (imageModel != null) {
+                        AsyncImage(
+                            model              = imageModel,
+                            contentDescription = "Dog photo",
+                            modifier           = Modifier.fillMaxSize(),
+                            contentScale       = ContentScale.Crop,
+                        )
+                    } else {
+                        Icon(
+                            imageVector        = Icons.Filled.CameraAlt,
+                            contentDescription = "Add photo",
+                            tint               = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier           = Modifier.size(32.dp),
+                        )
+                    }
+                }
+
                 OutlinedTextField(
                     value         = name,
                     onValueChange = { name = it },
@@ -126,8 +178,8 @@ fun AddEditDogScreen(
 
                 Button(
                     onClick  = {
-                        if (isEditMode) viewModel.updateDog(dogId!!, name, breed, birthDate, notes)
-                        else viewModel.addDog(name, breed, birthDate, notes)
+                        if (isEditMode) viewModel.updateDog(dogId!!, name, breed, birthDate, notes, selectedImageUri)
+                        else viewModel.addDog(name, breed, birthDate, notes, selectedImageUri)
                     },
                     enabled  = dogActionState !is DogActionState.Loading,
                     modifier = Modifier.fillMaxWidth().height(52.dp),

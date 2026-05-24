@@ -6,5 +6,6 @@ data class Dog(
     val name: String = "",
     val breed: String = "",
     val birthDate: String = "",
-    val notes: String = ""
+    val notes: String = "",
+    val photoUrl: String = ""
 )
