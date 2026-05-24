@@ -14,15 +14,21 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Air
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Notes
 import androidx.compose.material.icons.filled.Pets
+import androidx.compose.material.icons.filled.Thermostat
+import androidx.compose.material.icons.filled.WbSunny
+import androidx.compose.material.icons.filled.WaterDrop
 import androidx.compose.material3.AssistChip
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
@@ -39,6 +45,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -46,7 +53,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.example.pet4you.data.model.Meetup
+import com.example.pet4you.network.WeatherResponse
+import com.example.pet4you.repository.WeatherRepository
 import com.example.pet4you.ui.components.ErrorMessage
 import com.example.pet4you.ui.components.InfoRow
 import com.example.pet4you.ui.components.LoadingBox
@@ -176,6 +186,8 @@ private fun MeetupDetailContent(
             }
         }
 
+        WeatherCard(location = meetup.location)
+
         if (meetup.description.isNotEmpty()) {
             ElevatedCard(
                 modifier  = Modifier.fillMaxWidth(),
@@ -254,6 +266,86 @@ private fun MeetupDetailContent(
                 ) {
                     if (isLoading) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
                     else Text(if (isFull) "Meetup Full" else "Join Meetup", style = MaterialTheme.typography.labelLarge)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun WeatherCard(location: String) {
+    val weather by produceState<WeatherResponse?>(null, location) {
+        value = WeatherRepository.getWeather(location)
+    }
+
+    weather?.let { w ->
+        val condition   = w.weather.firstOrNull()
+        val iconUrl     = condition?.icon?.let { "https://openweathermap.org/img/wn/$it@2x.png" }
+        val description = condition?.description?.replaceFirstChar { it.uppercase() } ?: ""
+        val tempInt     = w.main.temp.toInt()
+
+        ElevatedCard(
+            modifier  = Modifier.fillMaxWidth(),
+            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
+        ) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                InfoRow(icon = Icons.Filled.WbSunny, text = "Weather at location")
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (iconUrl != null) {
+                        AsyncImage(
+                            model              = iconUrl,
+                            contentDescription = description,
+                            modifier           = Modifier.size(52.dp),
+                        )
+                    }
+                    Spacer(Modifier.width(4.dp))
+                    Column {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector        = Icons.Filled.Thermostat,
+                                contentDescription = null,
+                                modifier           = Modifier.size(18.dp),
+                                tint               = MaterialTheme.colorScheme.primary,
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                text  = "$tempInt°C  •  $description",
+                                style = MaterialTheme.typography.titleMedium,
+                            )
+                        }
+                        Spacer(Modifier.height(4.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector        = Icons.Filled.WaterDrop,
+                                    contentDescription = null,
+                                    modifier           = Modifier.size(14.dp),
+                                    tint               = MaterialTheme.colorScheme.secondary,
+                                )
+                                Spacer(Modifier.width(3.dp))
+                                Text(
+                                    text  = "${w.main.humidity}%",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector        = Icons.Filled.Air,
+                                    contentDescription = null,
+                                    modifier           = Modifier.size(14.dp),
+                                    tint               = MaterialTheme.colorScheme.secondary,
+                                )
+                                Spacer(Modifier.width(3.dp))
+                                Text(
+                                    text  = "${"%.1f".format(w.wind.speed)} m/s",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
