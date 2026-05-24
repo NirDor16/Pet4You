@@ -56,6 +56,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.example.pet4you.data.model.Meetup
 import com.example.pet4you.network.WeatherResponse
+import com.example.pet4you.network.DogParkResult
 import com.example.pet4you.repository.WeatherRepository
 import com.example.pet4you.ui.components.ErrorMessage
 import com.example.pet4you.ui.components.InfoRow

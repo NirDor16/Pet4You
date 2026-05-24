@@ -23,14 +23,6 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        buildConfigField(
-            "String", "OPENWEATHER_API_KEY",
-            "\"${localProperties.getProperty("OPENWEATHER_API_KEY", "")}\"",
-        )
-        buildConfigField(
-            "String", "SERP_API_KEY",
-            "\"${localProperties.getProperty("SERP_API_KEY", "")}\"",
-        )
     }
 
     buildTypes {
