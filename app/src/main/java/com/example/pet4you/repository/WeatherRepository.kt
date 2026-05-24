@@ -17,6 +17,16 @@ object WeatherRepository {
         }.getOrNull()?.also { cache[cacheKey] = it }
     }
 
+    suspend fun getWeatherForDate(location: String, datetimeMs: Long): WeatherResponse? {
+        val hourBucket = datetimeMs / 3_600_000
+        val cacheKey   = "${location.lowercase().trim()}_$hourBucket"
+        cache[cacheKey]?.let { return it }
+        val city = bestCityQuery(location)
+        return runCatching {
+            ApiClient.apiService.getWeatherForecast(city, datetimeMs)
+        }.getOrNull()?.also { cache[cacheKey] = it }
+    }
+
     private fun bestCityQuery(location: String): String {
         val parts = location.split(",").map { it.trim() }.filter { it.isNotEmpty() }
         return when {

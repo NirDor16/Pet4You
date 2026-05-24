@@ -187,7 +187,7 @@ private fun MeetupDetailContent(
             }
         }
 
-        WeatherCard(location = meetup.location)
+        WeatherCard(location = meetup.location, datetimeMs = meetup.dateTime)
 
         if (meetup.description.isNotEmpty()) {
             ElevatedCard(
@@ -274,9 +274,9 @@ private fun MeetupDetailContent(
 }
 
 @Composable
-private fun WeatherCard(location: String) {
-    val weather by produceState<WeatherResponse?>(null, location) {
-        value = WeatherRepository.getWeather(location)
+private fun WeatherCard(location: String, datetimeMs: Long) {
+    val weather by produceState<WeatherResponse?>(null, location, datetimeMs) {
+        value = WeatherRepository.getWeatherForDate(location, datetimeMs)
     }
 
     weather?.let { w ->

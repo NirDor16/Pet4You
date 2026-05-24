@@ -62,6 +62,12 @@ interface ApiService {
     @GET("weather")
     suspend fun getWeather(@Query("location") location: String): WeatherResponse
 
+    @GET("weather-forecast")
+    suspend fun getWeatherForecast(
+        @Query("location")    location:   String,
+        @Query("datetime_ms") datetimeMs: Long,
+    ): WeatherResponse
+
     @POST("dog-parks")
     suspend fun getDogParks(@Body request: DogParksRequest): SerpApiResponse
 }

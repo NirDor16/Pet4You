@@ -34,12 +34,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
 import com.example.pet4you.data.model.Meetup
+import com.example.pet4you.network.WeatherResponse
+import com.example.pet4you.repository.WeatherRepository
 import com.example.pet4you.ui.components.EmptyState
 import com.example.pet4you.ui.components.ErrorMessage
 import com.example.pet4you.ui.components.LoadingBox
@@ -253,7 +257,7 @@ private fun MeetupCard(
                     isCreator     -> StatusBadge("Your meetup", MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.onPrimaryContainer)
                     isParticipant -> StatusBadge("Joined", MaterialTheme.colorScheme.tertiaryContainer, MaterialTheme.colorScheme.onTertiaryContainer)
                     meetup.recommendationScore != null -> StatusBadge(
-                        label          = "Match ${(meetup.recommendationScore * 100).toInt()}%",
+                        label          = "Match ${(meetup.recommendationScore!! * 100).toInt()}%",
                         containerColor = MaterialTheme.colorScheme.primaryContainer,
                         contentColor   = MaterialTheme.colorScheme.onPrimaryContainer,
                     )
@@ -281,14 +285,49 @@ private fun MeetupCard(
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp), color = MaterialTheme.colorScheme.outlineVariant)
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.Group, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))
-                val participantText = if (meetup.participantLimit > 0)
-                    "${meetup.participants.size} / ${meetup.participantLimit} participants"
-                else
-                    "${meetup.participants.size} participant(s)"
-                Text("  $participantText", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+            Row(
+                modifier              = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment     = Alignment.CenterVertically,
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.Group, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))
+                    val participantText = if (meetup.participantLimit > 0)
+                        "${meetup.participants.size} / ${meetup.participantLimit} participants"
+                    else
+                        "${meetup.participants.size} participant(s)"
+                    Text("  $participantText", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                }
+                val daysUntil = (meetup.dateTime - System.currentTimeMillis()) / 86_400_000
+                if (daysUntil in 0..5 && meetup.location.isNotBlank()) {
+                    WeatherChip(location = meetup.location, datetimeMs = meetup.dateTime)
+                }
             }
+        }
+    }
+}
+
+@Composable
+private fun WeatherChip(location: String, datetimeMs: Long) {
+    val weather by produceState<WeatherResponse?>(null, location, datetimeMs) {
+        value = WeatherRepository.getWeatherForDate(location, datetimeMs)
+    }
+    weather?.let { w ->
+        val condition = w.weather.firstOrNull()
+        val iconUrl   = condition?.icon?.let { "https://openweathermap.org/img/wn/$it.png" }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (iconUrl != null) {
+                AsyncImage(
+                    model              = iconUrl,
+                    contentDescription = null,
+                    modifier           = Modifier.size(18.dp),
+                )
+            }
+            Text(
+                text  = "${w.main.temp.toInt()}°C",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }
