@@ -34,7 +34,9 @@ import androidx.compose.material.icons.filled.Notes
 import androidx.compose.material.icons.filled.Pets
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
@@ -52,6 +54,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -63,7 +66,9 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.pet4you.network.DogParkResult
+import com.example.pet4you.network.WeatherResponse
 import com.example.pet4you.repository.DogParkRepository
+import com.example.pet4you.repository.WeatherRepository
 import com.example.pet4you.ui.components.BreedSelector
 import com.example.pet4you.ui.components.Pet4YouTopBar
 import com.example.pet4you.ui.components.SuccessOverlay
@@ -261,6 +266,10 @@ fun CreateMeetupScreen(
                 Text("  ${dateFormatter.format(Date(selectedDateTime))}")
             }
 
+            if (location.isNotBlank()) {
+                WeatherPreview(location = location, datetimeMs = selectedDateTime)
+            }
+
             OutlinedTextField(
                 value         = description,
                 onValueChange = { description = it },
@@ -330,6 +339,47 @@ fun CreateMeetupScreen(
 
             OutlinedButton(onClick = onNavigateBack, modifier = Modifier.fillMaxWidth()) {
                 Text("Cancel")
+            }
+        }
+    }
+}
+
+@Composable
+private fun WeatherPreview(location: String, datetimeMs: Long) {
+    val weather by produceState<WeatherResponse?>(null, location, datetimeMs) {
+        value = WeatherRepository.getWeatherForDate(location, datetimeMs)
+    }
+    weather?.let { w ->
+        val condition   = w.weather.firstOrNull()
+        val iconUrl     = condition?.icon?.let { "https://openweathermap.org/img/wn/$it@2x.png" }
+        val description = condition?.description?.replaceFirstChar { it.uppercase() } ?: ""
+        ElevatedCard(
+            modifier  = Modifier.fillMaxWidth(),
+            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 1.dp),
+        ) {
+            Row(
+                modifier          = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (iconUrl != null) {
+                    coil.compose.AsyncImage(
+                        model              = iconUrl,
+                        contentDescription = description,
+                        modifier           = Modifier.size(40.dp),
+                    )
+                }
+                Spacer(Modifier.width(8.dp))
+                Column {
+                    Text(
+                        text  = "Expected weather",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        text  = "${w.main.temp.toInt()}°C  •  $description",
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
             }
         }
     }

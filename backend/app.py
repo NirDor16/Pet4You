@@ -259,6 +259,57 @@ def weather():
         return jsonify({"error": str(e)}), 502
 
 
+@app.route("/weather-forecast", methods=["GET"])
+def weather_forecast():
+    if not check_api_key():
+        return jsonify({"error": "Unauthorized"}), 401
+
+    location    = request.args.get("location", "").strip()
+    datetime_ms = request.args.get("datetime_ms", 0, type=int)
+    if not location or not datetime_ms:
+        return jsonify({"error": "location and datetime_ms required"}), 400
+
+    now_ms    = int(time.time() * 1000)
+    diff_days = (datetime_ms - now_ms) / 86_400_000
+
+    # Past or within 12 h → current weather is good enough
+    if diff_days <= 0.5:
+        resp = http.get(
+            "https://api.openweathermap.org/data/2.5/weather",
+            params={"q": location, "units": "metric", "appid": OPENWEATHER_API_KEY},
+            timeout=5,
+        )
+        if resp.status_code != 200:
+            return jsonify({"error": "City not found"}), 404
+        return jsonify(resp.json())
+
+    # More than 5 days ahead → OWM free tier can't forecast that far
+    if diff_days > 5:
+        return jsonify({"error": "Forecast unavailable beyond 5 days"}), 404
+
+    resp = http.get(
+        "https://api.openweathermap.org/data/2.5/forecast",
+        params={"q": location, "units": "metric", "appid": OPENWEATHER_API_KEY, "cnt": 40},
+        timeout=5,
+    )
+    if resp.status_code != 200:
+        return jsonify({"error": "City not found"}), 404
+
+    data      = resp.json()
+    target_ts = datetime_ms / 1000
+    forecasts = data.get("list", [])
+    if not forecasts:
+        return jsonify({"error": "No forecast data"}), 404
+
+    closest = min(forecasts, key=lambda f: abs(f["dt"] - target_ts))
+    return jsonify({
+        "main":    closest["main"],
+        "weather": closest.get("weather", []),
+        "wind":    closest.get("wind", {"speed": 0}),
+        "name":    data.get("city", {}).get("name", location),
+    })
+
+
 @app.route("/dog-parks", methods=["POST"])
 def dog_parks():
     if not check_api_key():
