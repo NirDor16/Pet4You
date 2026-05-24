@@ -35,12 +35,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.pet4you.data.model.Dog
+import com.example.pet4you.repository.DogCeoRepository
 import com.example.pet4you.ui.components.EmptyState
 import com.example.pet4you.ui.components.ErrorMessage
 import com.example.pet4you.ui.components.LoadingBox
@@ -118,6 +121,43 @@ fun DogListScreen(
 }
 
 @Composable
+private fun DogAvatar(dog: Dog, size: Dp = 44.dp) {
+    if (dog.photoUrl.isNotEmpty()) {
+        AsyncImage(
+            model              = dog.photoUrl,
+            contentDescription = dog.name,
+            modifier           = Modifier.size(size).clip(CircleShape),
+            contentScale       = ContentScale.Crop,
+        )
+        return
+    }
+    val breedImageUrl by produceState<String?>(null, dog.breed) {
+        value = DogCeoRepository.getBreedImageUrl(dog.breed)
+    }
+    if (breedImageUrl != null) {
+        AsyncImage(
+            model              = breedImageUrl,
+            contentDescription = dog.name,
+            modifier           = Modifier.size(size).clip(CircleShape),
+            contentScale       = ContentScale.Crop,
+        )
+    } else {
+        Box(
+            modifier         = Modifier
+                .size(size)
+                .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text  = dog.breed.firstOrNull()?.uppercaseChar()?.toString() ?: "?",
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
+            )
+        }
+    }
+}
+
+@Composable
 private fun DogCard(dog: Dog, onEdit: () -> Unit, onDelete: () -> Unit) {
     ElevatedCard(
         modifier  = Modifier.fillMaxWidth(),
@@ -127,27 +167,7 @@ private fun DogCard(dog: Dog, onEdit: () -> Unit, onDelete: () -> Unit) {
             modifier          = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            if (dog.photoUrl.isNotEmpty()) {
-                AsyncImage(
-                    model              = dog.photoUrl,
-                    contentDescription = dog.name,
-                    modifier           = Modifier.size(44.dp).clip(CircleShape),
-                    contentScale       = ContentScale.Crop,
-                )
-            } else {
-                Box(
-                    modifier         = Modifier
-                        .size(44.dp)
-                        .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text  = dog.breed.firstOrNull()?.uppercaseChar()?.toString() ?: "?",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                    )
-                }
-            }
+            DogAvatar(dog = dog)
             Spacer(Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
