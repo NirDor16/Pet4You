@@ -65,6 +65,7 @@ dependencies {
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.storage)
     implementation(libs.coil.compose)
+    implementation(libs.lottie.compose)
 
     // Coroutines + Firebase
     implementation(libs.kotlinx.coroutines.play.services)
