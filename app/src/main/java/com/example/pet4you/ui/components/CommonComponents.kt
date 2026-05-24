@@ -13,24 +13,34 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Pets
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.example.pet4you.data.model.DOG_BREEDS
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -163,6 +173,48 @@ fun Pet4YouCard(
                 containerColor = MaterialTheme.colorScheme.surface,
             ),
         ) { content() }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun BreedSelector(
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    label: String = "Breed",
+    onBreedSelected: (String) -> Unit = onValueChange,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val filtered = remember(value) {
+        if (value.isBlank()) emptyList()
+        else DOG_BREEDS.filter { it.contains(value, ignoreCase = true) }.take(8)
+    }
+    ExposedDropdownMenuBox(
+        expanded = expanded && filtered.isNotEmpty(),
+        onExpandedChange = { expanded = it },
+        modifier = modifier,
+    ) {
+        OutlinedTextField(
+            value         = value,
+            onValueChange = { onValueChange(it); expanded = true },
+            label         = { Text(label) },
+            leadingIcon   = { Icon(Icons.Filled.Pets, contentDescription = null) },
+            trailingIcon  = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded && filtered.isNotEmpty()) },
+            singleLine    = true,
+            modifier      = Modifier.fillMaxWidth().menuAnchor(),
+        )
+        ExposedDropdownMenu(
+            expanded = expanded && filtered.isNotEmpty(),
+            onDismissRequest = { expanded = false },
+        ) {
+            filtered.forEach { breed ->
+                DropdownMenuItem(
+                    text    = { Text(breed) },
+                    onClick = { onBreedSelected(breed); expanded = false },
+                )
+            }
+        }
     }
 }
 

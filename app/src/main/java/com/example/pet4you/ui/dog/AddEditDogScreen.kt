@@ -32,6 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.pet4you.ui.components.BreedSelector
 import com.example.pet4you.ui.components.LoadingBox
 import com.example.pet4you.ui.components.Pet4YouTopBar
 import com.example.pet4you.viewmodel.DogActionState
@@ -92,13 +93,9 @@ fun AddEditDogScreen(
                     singleLine    = true,
                     modifier      = Modifier.fillMaxWidth(),
                 )
-                OutlinedTextField(
+                BreedSelector(
                     value         = breed,
                     onValueChange = { breed = it },
-                    label         = { Text("Breed") },
-                    leadingIcon   = { Icon(Icons.Filled.Pets, contentDescription = null) },
-                    singleLine    = true,
-                    modifier      = Modifier.fillMaxWidth(),
                 )
                 OutlinedTextField(
                     value         = birthDate,
