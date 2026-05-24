@@ -252,6 +252,11 @@ private fun MeetupCard(
                 when {
                     isCreator     -> StatusBadge("Your meetup", MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.onPrimaryContainer)
                     isParticipant -> StatusBadge("Joined", MaterialTheme.colorScheme.tertiaryContainer, MaterialTheme.colorScheme.onTertiaryContainer)
+                    meetup.recommendationScore != null -> StatusBadge(
+                        label          = "Match ${(meetup.recommendationScore * 100).toInt()}%",
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor   = MaterialTheme.colorScheme.onPrimaryContainer,
+                    )
                 }
             }
 

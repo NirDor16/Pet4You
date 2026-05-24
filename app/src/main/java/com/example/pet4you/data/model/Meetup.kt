@@ -1,6 +1,7 @@
 package com.example.pet4you.data.model
 
 import com.google.firebase.firestore.Exclude
+import com.google.gson.annotations.SerializedName
 
 data class Meetup(
     val meetupId: String = "",
@@ -14,5 +15,6 @@ data class Meetup(
     val participantLimit: Int = 0,
     val createdAt: Long = 0L,
     @get:Exclude
+    @SerializedName("score")
     val recommendationScore: Float? = null,
 )
