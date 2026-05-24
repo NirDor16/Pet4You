@@ -63,6 +63,8 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
+    implementation(libs.firebase.storage)
+    implementation(libs.coil.compose)
 
     // Coroutines + Firebase
     implementation(libs.kotlinx.coroutines.play.services)

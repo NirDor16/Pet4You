@@ -3,6 +3,9 @@ package com.example.pet4you.ui.dog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import coil.compose.AsyncImage
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -124,17 +127,26 @@ private fun DogCard(dog: Dog, onEdit: () -> Unit, onDelete: () -> Unit) {
             modifier          = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Box(
-                modifier         = Modifier
-                    .size(44.dp)
-                    .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text  = dog.breed.firstOrNull()?.uppercaseChar()?.toString() ?: "?",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+            if (dog.photoUrl.isNotEmpty()) {
+                AsyncImage(
+                    model              = dog.photoUrl,
+                    contentDescription = dog.name,
+                    modifier           = Modifier.size(44.dp).clip(CircleShape),
+                    contentScale       = ContentScale.Crop,
                 )
+            } else {
+                Box(
+                    modifier         = Modifier
+                        .size(44.dp)
+                        .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        text  = dog.breed.firstOrNull()?.uppercaseChar()?.toString() ?: "?",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    )
+                }
             }
             Spacer(Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {

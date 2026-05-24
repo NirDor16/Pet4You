@@ -1,5 +1,6 @@
 package com.example.pet4you.viewmodel
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pet4you.data.model.Dog
@@ -57,10 +58,11 @@ class DogViewModel : ViewModel() {
         }
     }
 
-    fun addDog(name: String, breed: String, birthDate: String, notes: String) {
+    fun addDog(name: String, breed: String, birthDate: String, notes: String, photoUri: Uri? = null) {
         viewModelScope.launch {
             _dogActionState.value = DogActionState.Loading
-            val result = repository.addDog(name, breed, birthDate, notes)
+            val photoUrl = photoUri?.let { repository.uploadDogPhoto(it).getOrNull() ?: "" } ?: ""
+            val result = repository.addDog(name, breed, birthDate, notes, photoUrl)
             _dogActionState.value = if (result.isSuccess) {
                 DogActionState.Success
             } else {
@@ -69,10 +71,11 @@ class DogViewModel : ViewModel() {
         }
     }
 
-    fun updateDog(dogId: String, name: String, breed: String, birthDate: String, notes: String) {
+    fun updateDog(dogId: String, name: String, breed: String, birthDate: String, notes: String, photoUri: Uri? = null) {
         viewModelScope.launch {
             _dogActionState.value = DogActionState.Loading
-            val result = repository.updateDog(dogId, name, breed, birthDate, notes)
+            val photoUrl = photoUri?.let { repository.uploadDogPhoto(it).getOrNull() ?: "" } ?: ""
+            val result = repository.updateDog(dogId, name, breed, birthDate, notes, photoUrl)
             _dogActionState.value = if (result.isSuccess) {
                 DogActionState.Success
             } else {

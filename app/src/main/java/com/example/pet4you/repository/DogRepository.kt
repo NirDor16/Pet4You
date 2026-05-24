@@ -1,9 +1,12 @@
 package com.example.pet4you.repository
 
+import android.net.Uri
 import com.example.pet4you.data.model.Dog
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.tasks.await
+import java.util.UUID
 
 class DogRepository {
 
@@ -27,7 +30,16 @@ class DogRepository {
         }
     }
 
-    suspend fun addDog(name: String, breed: String, birthDate: String, notes: String): Result<Unit> {
+    suspend fun uploadDogPhoto(imageUri: Uri): Result<String> = runCatching {
+        val userId = currentUserId ?: throw Exception("Not logged in")
+        val photoId = UUID.randomUUID().toString()
+        val ref = FirebaseStorage.getInstance().reference
+            .child("dog_photos/$userId/$photoId.jpg")
+        ref.putFile(imageUri).await()
+        ref.downloadUrl.await().toString()
+    }
+
+    suspend fun addDog(name: String, breed: String, birthDate: String, notes: String, photoUrl: String = ""): Result<Unit> {
         return try {
             val uid = currentUserId ?: return Result.failure(Exception("User not logged in"))
             val docRef = firestore.collection("dogs").document()
@@ -37,7 +49,8 @@ class DogRepository {
                 name = name,
                 breed = breed,
                 birthDate = birthDate,
-                notes = notes
+                notes = notes,
+                photoUrl = photoUrl
             )
             docRef.set(dog).await()
             Result.success(Unit)
@@ -57,14 +70,15 @@ class DogRepository {
         }
     }
 
-    suspend fun updateDog(dogId: String, name: String, breed: String, birthDate: String, notes: String): Result<Unit> {
+    suspend fun updateDog(dogId: String, name: String, breed: String, birthDate: String, notes: String, photoUrl: String = ""): Result<Unit> {
         return try {
-            val updates = mapOf(
+            val updates = mutableMapOf<String, Any>(
                 "name" to name,
                 "breed" to breed,
                 "birthDate" to birthDate,
                 "notes" to notes
             )
+            if (photoUrl.isNotEmpty()) updates["photoUrl"] = photoUrl
             firestore.collection("dogs").document(dogId).update(updates).await()
             Result.success(Unit)
         } catch (e: Exception) {
