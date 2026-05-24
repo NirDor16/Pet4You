@@ -38,6 +38,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.example.pet4you.ui.components.SuccessOverlay
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -79,7 +81,9 @@ fun AddEditDogScreen(
             notes = dog.notes; existingPhotoUrl = dog.photoUrl
         }
         if (dogActionState is DogActionState.Success) {
-            viewModel.resetActionState(); onNavigateBack()
+            delay(1400)
+            viewModel.resetActionState()
+            onNavigateBack()
         }
     }
 
@@ -93,7 +97,9 @@ fun AddEditDogScreen(
             )
         },
     ) { paddingValues ->
-        if (isEditMode && isLoading) {
+        if (dogActionState is DogActionState.Success) {
+            SuccessOverlay(message = if (isEditMode) "Changes saved!" else "Dog added!")
+        } else if (isEditMode && isLoading) {
             LoadingBox()
         } else {
             Column(

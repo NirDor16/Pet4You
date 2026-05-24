@@ -46,8 +46,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.pet4you.ui.components.BreedSelector
 import com.example.pet4you.ui.components.Pet4YouTopBar
+import com.example.pet4you.ui.components.SuccessOverlay
 import com.example.pet4you.viewmodel.MeetupActionState
 import com.example.pet4you.viewmodel.MeetupViewModel
+import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -73,12 +75,19 @@ fun CreateMeetupScreen(
 
     LaunchedEffect(meetupActionState) {
         if (meetupActionState is MeetupActionState.Success) {
-            viewModel.resetActionState(); onNavigateBack()
+            delay(1400)
+            viewModel.resetActionState()
+            onNavigateBack()
         }
     }
 
     val isLoading    = meetupActionState is MeetupActionState.Loading
     val errorMessage = (meetupActionState as? MeetupActionState.Error)?.message
+
+    if (meetupActionState is MeetupActionState.Success) {
+        SuccessOverlay(message = "Meetup created!")
+        return@CreateMeetupScreen
+    }
 
     Scaffold(
         topBar = { Pet4YouTopBar(title = "Create Meetup", onBack = onNavigateBack) },

@@ -17,6 +17,11 @@ import androidx.compose.material.icons.filled.Pets
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
+import com.airbnb.lottie.compose.animateLottieCompositionAsState
+import com.airbnb.lottie.compose.rememberLottieComposition
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -78,8 +83,34 @@ fun Pet4YouTopBar(
 
 @Composable
 fun LoadingBox(modifier: Modifier = Modifier.fillMaxSize()) {
+    val composition by rememberLottieComposition(LottieCompositionSpec.Asset("lottie_loading.json"))
+    val progress    by animateLottieCompositionAsState(composition, iterations = LottieConstants.IterateForever)
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
-        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+        if (composition != null) {
+            LottieAnimation(composition, { progress }, modifier = Modifier.size(100.dp))
+        } else {
+            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+        }
+    }
+}
+
+@Composable
+fun SuccessOverlay(message: String = "Saved!") {
+    val composition by rememberLottieComposition(LottieCompositionSpec.Asset("lottie_success.json"))
+    val progress    by animateLottieCompositionAsState(composition, iterations = 1)
+    Box(
+        modifier         = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            LottieAnimation(composition, { progress }, modifier = Modifier.size(140.dp))
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text  = message,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
     }
 }
 
@@ -90,14 +121,19 @@ fun EmptyState(
     subtitle: String = "",
     modifier: Modifier = Modifier.fillMaxSize(),
 ) {
+    val composition by rememberLottieComposition(LottieCompositionSpec.Asset("lottie_empty.json"))
+    val progress    by animateLottieCompositionAsState(composition, iterations = LottieConstants.IterateForever)
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Icon(
-                imageVector        = icon,
-                contentDescription = null,
-                modifier           = Modifier.size(72.dp),
-                tint               = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
-            )
+            Box(contentAlignment = Alignment.Center) {
+                LottieAnimation(composition, { progress }, modifier = Modifier.size(120.dp))
+                Icon(
+                    imageVector        = icon,
+                    contentDescription = null,
+                    modifier           = Modifier.size(44.dp),
+                    tint               = MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
+                )
+            }
             Spacer(Modifier.height(16.dp))
             Text(
                 text      = title,
