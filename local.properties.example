@@ -1,0 +1,11 @@
+## Copy this file to local.properties and fill in your API keys.
+## local.properties is gitignored — never commit it.
+
+# Android SDK path (set automatically by Android Studio)
+sdk.dir=C\:\\Users\\YOUR_USERNAME\\AppData\\Local\\Android\\Sdk
+
+# OpenWeatherMap — free at https://openweathermap.org → My API Keys
+OPENWEATHER_API_KEY=your_openweather_key_here
+
+# SerpAPI — free tier (100 req/month) at https://serpapi.com → My Account → API Key
+SERP_API_KEY=your_serpapi_key_here

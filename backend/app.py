@@ -2,6 +2,7 @@ import heapq
 import os
 import time
 
+import requests as http
 from flask import Flask, jsonify, request
 from openai import OpenAI
 from dotenv import load_dotenv
@@ -10,7 +11,9 @@ load_dotenv()
 
 app = Flask(__name__)
 client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
-API_KEY = os.environ["API_KEY"]
+API_KEY             = os.environ["API_KEY"]
+OPENWEATHER_API_KEY = os.environ.get("OPENWEATHER_API_KEY", "")
+SERP_API_KEY        = os.environ.get("SERP_API_KEY", "")
 
 SYSTEM_PROMPT = (
     "You are a helpful pet care assistant for dog owners. "
@@ -232,6 +235,57 @@ def recommend_meetups():
 
     recommendations = dijkstra_recommend(dog_breeds, user_id, meetups)
     return jsonify({"recommendations": recommendations})
+
+
+@app.route("/weather", methods=["GET"])
+def weather():
+    if not check_api_key():
+        return jsonify({"error": "Unauthorized"}), 401
+
+    location = request.args.get("location", "").strip()
+    if not location:
+        return jsonify({"error": "location is required"}), 400
+
+    try:
+        resp = http.get(
+            "https://api.openweathermap.org/data/2.5/weather",
+            params={"q": location, "units": "metric", "appid": OPENWEATHER_API_KEY},
+            timeout=5,
+        )
+        if resp.status_code != 200:
+            return jsonify({"error": "City not found"}), 404
+        return jsonify(resp.json())
+    except Exception as e:
+        return jsonify({"error": str(e)}), 502
+
+
+@app.route("/dog-parks", methods=["POST"])
+def dog_parks():
+    if not check_api_key():
+        return jsonify({"error": "Unauthorized"}), 401
+
+    data = request.get_json(silent=True) or {}
+    lat = data.get("lat")
+    lon = data.get("lon")
+    if lat is None or lon is None:
+        return jsonify({"error": "lat and lon are required"}), 400
+
+    try:
+        resp = http.get(
+            "https://serpapi.com/search.json",
+            params={
+                "engine": "google_maps",
+                "q": "dog park",
+                "ll": f"@{lat},{lon},15z",
+                "type": "search",
+                "api_key": SERP_API_KEY,
+            },
+            timeout=10,
+        )
+        parks = resp.json().get("local_results", [])
+        return jsonify({"local_results": parks})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 502
 
 
 if __name__ == "__main__":
