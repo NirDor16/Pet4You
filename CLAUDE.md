@@ -96,6 +96,7 @@ Always use these — do NOT duplicate loading/empty/error/success patterns:
 | `Pet4YouCard(modifier?, onClick?, content)` | Standard ElevatedCard |
 | `InfoRow(icon, text, modifier?, tint?)` | Icon + text row in detail screens |
 | `SuccessOverlay(message?)` | Full-screen Lottie checkmark + message, shown after save/create; call with `return@Screen` to block Scaffold from rendering behind it |
+| `BreedSelector(value, onValueChange, label?, onBreedSelected)` | Autocomplete dropdown for dog breeds — filters `DOG_BREEDS` list as user types, shows up to 8 matches, calls `onBreedSelected` on tap; used in AddEditDogScreen and CreateMeetupScreen |
 
 ### Lottie Animation Assets (`app/src/main/assets/`)
 | File | Used in | Description |
@@ -321,7 +322,7 @@ App opens → SplashScreen (Lottie) → checks Firebase Auth
 - Env vars on Render: `OPENAI_API_KEY`, `API_KEY`, `OPENWEATHER_API_KEY`, `SERP_API_KEY`
 - Local `.env` (gitignored): same vars; template in `backend/.env.example`
 - Security: `X-API-Key` header checked on every route via `check_api_key()`
-- Algorithm: `dijkstra_recommend()` — weighted graph, Dijkstra shortest path → meetup scores
+- Algorithm: `dijkstra_recommend()` in `backend/app.py` — see section below
 - Tests: `backend/test_recommend.py` — pytest; run with `py -m pytest test_recommend.py -v`
 - Local run: `cd backend && source venv/Scripts/activate && python app.py`
 - ⚠️ Windows: always `debug=False`. `debug=True` → Werkzeug spawns child processes that survive, accumulate on port 5000. Kill all: `Get-Process python | Stop-Process -Force`
@@ -339,6 +340,58 @@ App opens → SplashScreen (Lottie) → checks Firebase Auth
 | POST | `/recommend-meetups` | `{ dog_breeds[], user_id, meetups[] }` | `{ recommendations[] }` — each meetup has `score` field |
 | GET | `/weather` | `?location={city}` | OpenWeatherMap response (main, weather[], wind, name) |
 | POST | `/dog-parks` | `{ lat, lon }` | `{ local_results[] }` — SerpAPI parks (title, address, rating, reviews) |
+
+## Meetup Recommendation Algorithm (Dijkstra)
+
+**Entry point:** `dijkstra_recommend(dog_breeds, user_id, meetups)` in `backend/app.py`
+**Called by:** `POST /recommend-meetups` → Android `MeetupViewModel.loadRecommendations()`
+
+### How it works
+
+**Step 1 — Build a weighted directed graph:**
+- Node `"user"` → meetup nodes (direct edges)
+- Meetup node → meetup node (similarity edges between meetups that share breeds)
+
+**Edge weights (lower = more relevant):**
+| Condition | Base weight |
+|-----------|------------|
+| Exact breed match (user's dog breed ∈ meetup's dogBreeds) | 0.10 |
+| Same size group match (small/medium/large) | 0.35 |
+| Open meetup (no breed filter) | 0.65 |
+| No connection | no edge — meetup excluded |
+| Meetup within 7 days | −0.20 bonus |
+| Meetup within 30 days | −0.10 bonus |
+| Meetup → Meetup (shared breed) | 0.20 |
+
+**Breed size groups** (`BREED_SIZES` dict in app.py):
+- `small`: chihuahua, maltese, pomeranian, yorkshire terrier, shih tzu, pug, etc.
+- `medium`: beagle, bulldog, cocker spaniel, french bulldog, siberian husky, etc.
+- `large`: labrador, golden retriever, german shepherd, rottweiler, samoyed, etc.
+
+**Step 2 — Dijkstra shortest path** from `"user"` to every reachable meetup.
+
+**Step 3 — Convert distance → score:**
+```
+score = max(1.0 - distance, 0.0)   # rounded to 2 decimal places
+```
+Meetups with `score <= 0` are excluded. Results sorted by (distance ASC, dateTime ASC).
+
+### What gets filtered out (never recommended):
+- Meetups the user created (`creatorId == user_id`)
+- Meetups the user already joined (`user_id in participants`)
+- Past meetups (`dateTime <= now_ms`)
+
+### Android side (no changes needed to recommend new logic):
+- `RecommendMeetupsRequest` in `ApiService.kt` — sends `dog_breeds`, `user_id`, `meetups[]`
+- `RecommendMeetupsResponse` — receives `recommendations[]` with `score` field per meetup
+- `Meetup.recommendationScore: Float?` — annotated `@get:Exclude` (not stored in Firestore)
+- `MeetupViewModel.loadRecommendations()` — called lazily when "Recommended" tab is first opened
+- "Recommended" tab in `MeetupListScreen` — shows scored meetups sorted by score DESC
+
+### To extend the algorithm — backend only:
+Edit `_build_graph()` or `dijkstra_recommend()` in `backend/app.py`. Android side is already wired.
+
+---
 
 **Adding a new backend route** — always follow this pattern:
 ```python
