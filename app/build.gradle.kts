@@ -27,6 +27,10 @@ android {
             "String", "OPENWEATHER_API_KEY",
             "\"${localProperties.getProperty("OPENWEATHER_API_KEY", "")}\"",
         )
+        buildConfigField(
+            "String", "SERP_API_KEY",
+            "\"${localProperties.getProperty("SERP_API_KEY", "")}\"",
+        )
     }
 
     buildTypes {
@@ -83,6 +87,9 @@ dependencies {
     // Retrofit + Gson (AI Chat network layer)
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+
+    // Location (FusedLocationProviderClient)
+    implementation("com.google.android.gms:play-services-location:21.3.0")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
