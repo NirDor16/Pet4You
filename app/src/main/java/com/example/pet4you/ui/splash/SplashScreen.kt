@@ -32,7 +32,7 @@ fun SplashScreen(
 ) {
     val repository  = remember { AuthRepository() }
     val scope       = rememberCoroutineScope()
-    val composition by rememberLottieComposition(LottieCompositionSpec.Asset("lottie_splash.json"))
+    val composition by rememberLottieComposition(LottieCompositionSpec.Asset("lottie_dog.json"))
     val progress    by animateLottieCompositionAsState(composition, iterations = LottieConstants.IterateForever)
 
     LaunchedEffect(Unit) {
@@ -53,7 +53,7 @@ fun SplashScreen(
             LottieAnimation(
                 composition = composition,
                 progress    = { progress },
-                modifier    = Modifier.size(160.dp),
+                modifier    = Modifier.size(220.dp),
             )
             Spacer(Modifier.height(8.dp))
             Text(
