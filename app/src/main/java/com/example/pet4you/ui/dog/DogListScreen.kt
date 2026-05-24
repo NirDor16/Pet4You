@@ -12,12 +12,18 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
+import com.airbnb.lottie.compose.animateLottieCompositionAsState
+import com.airbnb.lottie.compose.rememberLottieComposition
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -44,7 +50,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.pet4you.data.model.Dog
 import com.example.pet4you.repository.DogCeoRepository
-import com.example.pet4you.ui.components.EmptyState
 import com.example.pet4you.ui.components.ErrorMessage
 import com.example.pet4you.ui.components.LoadingBox
 import com.example.pet4you.ui.components.Pet4YouTopBar
@@ -94,11 +99,7 @@ fun DogListScreen(
                 is DogListState.Success -> {
                     val dogs = (dogListState as DogListState.Success).dogs
                     if (dogs.isEmpty()) {
-                        EmptyState(
-                            icon     = Icons.Filled.Pets,
-                            title    = "No dogs yet",
-                            subtitle = "Tap + to add your first dog",
-                        )
+                        DogEmptyState()
                     } else {
                         LazyColumn(
                             contentPadding      = PaddingValues(16.dp),
@@ -117,6 +118,45 @@ fun DogListScreen(
                 else -> {}
             }
         }
+    }
+}
+
+@Composable
+private fun DogEmptyState() {
+    val composition by rememberLottieComposition(LottieCompositionSpec.Asset("lottie_dog.json"))
+    val progress    by animateLottieCompositionAsState(composition, iterations = LottieConstants.IterateForever)
+
+    Column(
+        modifier            = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        if (composition != null) {
+            LottieAnimation(
+                composition = composition,
+                progress    = { progress },
+                modifier    = Modifier.size(220.dp),
+            )
+        } else {
+            Icon(
+                imageVector        = Icons.Filled.Pets,
+                contentDescription = null,
+                modifier           = Modifier.size(64.dp),
+                tint               = MaterialTheme.colorScheme.primary,
+            )
+        }
+        Spacer(Modifier.height(12.dp))
+        Text(
+            text  = "No dogs yet",
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text  = "Tap + to add your first dog",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
