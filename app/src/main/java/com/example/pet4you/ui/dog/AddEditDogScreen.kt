@@ -9,6 +9,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,37 +17,48 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Notes
 import androidx.compose.material.icons.filled.Pets
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.produceState
 import com.example.pet4you.ui.components.SuccessOverlay
 import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import coil.compose.SubcomposeAsyncImage
+import com.example.pet4you.repository.DogCeoRepository
 import com.example.pet4you.ui.components.BreedSelector
 import com.example.pet4you.ui.components.LoadingBox
 import com.example.pet4you.ui.components.Pet4YouTopBar
@@ -155,6 +167,11 @@ fun AddEditDogScreen(
                     value         = breed,
                     onValueChange = { breed = it },
                 )
+
+                if (breed.isNotBlank() && selectedImageUri == null && existingPhotoUrl.isEmpty()) {
+                    BreedInspirationCard(breed = breed)
+                }
+
                 OutlinedTextField(
                     value         = birthDate,
                     onValueChange = { birthDate = it },
@@ -202,6 +219,117 @@ fun AddEditDogScreen(
                             style = MaterialTheme.typography.labelLarge,
                         )
                     }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun BreedInspirationCard(breed: String) {
+    var refreshKey by remember { mutableIntStateOf(0) }
+
+    val imageUrl by produceState<String?>(null, breed, refreshKey) {
+        value = null
+        value = DogCeoRepository.getBreedImageUrl(breed)
+    }
+
+    Surface(
+        shape  = RoundedCornerShape(16.dp),
+        tonalElevation = 2.dp,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(180.dp)
+                    .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)),
+            ) {
+                if (imageUrl != null) {
+                    SubcomposeAsyncImage(
+                        model              = imageUrl,
+                        contentDescription = breed,
+                        modifier           = Modifier.fillMaxSize(),
+                        contentScale       = ContentScale.Crop,
+                        loading            = {
+                            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                CircularProgressIndicator(
+                                    modifier   = Modifier.size(32.dp),
+                                    strokeWidth = 2.dp,
+                                    color      = MaterialTheme.colorScheme.primary,
+                                )
+                            }
+                        },
+                    )
+                } else {
+                    Box(
+                        modifier         = Modifier
+                            .fillMaxSize()
+                            .background(MaterialTheme.colorScheme.primaryContainer),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        CircularProgressIndicator(
+                            modifier    = Modifier.size(32.dp),
+                            strokeWidth = 2.dp,
+                            color       = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                }
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.45f)),
+                                startY = 80f,
+                            )
+                        ),
+                )
+
+                Text(
+                    text     = breed,
+                    style    = MaterialTheme.typography.titleSmall,
+                    color    = Color.White,
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(12.dp),
+                )
+            }
+
+            Row(
+                modifier              = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                verticalAlignment     = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector        = Icons.Filled.Pets,
+                        contentDescription = null,
+                        modifier           = Modifier.size(16.dp),
+                        tint               = MaterialTheme.colorScheme.primary,
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        text  = "Breed inspiration",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                FilledTonalButton(
+                    onClick      = {
+                        DogCeoRepository.clearBreedCache(breed)
+                        refreshKey++
+                    },
+                    modifier     = Modifier.height(32.dp),
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp),
+                ) {
+                    Icon(Icons.Filled.Refresh, contentDescription = null, modifier = Modifier.size(14.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text("New photo", style = MaterialTheme.typography.labelSmall)
                 }
             }
         }
