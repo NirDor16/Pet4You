@@ -104,7 +104,8 @@ Always use these — do NOT duplicate loading/empty/error/success patterns:
 | `lottie_loading.json` | `LoadingBox` | Rotating teal arc |
 | `lottie_success.json` | `SuccessOverlay` | Circle pop + white checkmark |
 | `lottie_empty.json` | `EmptyState` | Pulsing ring |
-| `lottie_splash.json` | `SplashScreen` | Bouncing teal circle |
+| `lottie_splash.json` | `SplashScreen` (replaced) | Bouncing teal circle (no longer active) |
+| `lottie_dog.json` | `SplashScreen` + `DogListScreen` (empty state) | Blinking dog animation (220dp, IterateForever) |
 
 Standard Lottie pattern:
 ```kotlin
@@ -338,7 +339,8 @@ App opens → SplashScreen (Lottie) → checks Firebase Auth
 | GET | `/health` | — | `{ status: "ok" }` |
 | POST | `/chat` | `{ message, history[] }` | `{ reply }` |
 | POST | `/recommend-meetups` | `{ dog_breeds[], user_id, meetups[] }` | `{ recommendations[] }` — each meetup has `score` field |
-| GET | `/weather` | `?location={city}` | OpenWeatherMap response (main, weather[], wind, name) |
+| GET | `/weather` | `?location={city}` | OpenWeatherMap current weather (main, weather[], wind, name) |
+| GET | `/weather-forecast` | `?location={city}&datetime_ms={ms}` | OWM current or forecast weather by date — ≤12h→current, 12h–5d→nearest 3h slot, >5d→404 |
 | POST | `/dog-parks` | `{ lat, lon }` | `{ local_results[] }` — SerpAPI parks (title, address, rating, reviews) |
 
 ## Meetup Recommendation Algorithm (Dijkstra)
@@ -492,6 +494,8 @@ match /dog_photos/{userId}/{photo} {
 | #24 | feature/weather | OpenWeatherMap weather card in MeetupDetailScreen (via backend proxy) |
 | #25 | feature/dog-park-picker | Nearby dog parks in CreateMeetupScreen — GPS + SerpAPI + ModalBottomSheet (via backend proxy) |
 | #26 | feature/backend-proxy | Move all API keys to Render — Android calls backend only; deleted WeatherApiService + SerpApiService |
+| #27 | feature/dog-lottie | Blinking dog Lottie animation (`lottie_dog.json`) — SplashScreen (220dp) + DogListScreen empty state |
+| #28 | feature/weather-forecast | Weather by meetup date — `/weather-forecast` backend endpoint + WeatherPreview in CreateMeetupScreen + WeatherChip in MeetupListScreen + updated WeatherCard in MeetupDetailScreen |
 
 ## What's Done ✅ — Backend
 
@@ -501,6 +505,7 @@ match /dog_photos/{userId}/{photo} {
 | #10 | feature/render-deploy | Render deploy — backend live at https://pet4you-backend.onrender.com |
 | #14 | feature/meetup-recommendation | POST /recommend-meetups — Dijkstra-based scoring algorithm |
 | #26 | feature/backend-proxy | GET /weather (→ OpenWeatherMap) + POST /dog-parks (→ SerpAPI); `requests` library added |
+| #28 | feature/weather-forecast | GET /weather-forecast — routes to OWM current or 5-day forecast by datetime_ms; finds nearest 3h slot |
 
 ## What's Done ✅ — Firebase / Infrastructure
 
@@ -559,6 +564,10 @@ When the backend returns a `score` field per meetup in `/recommend-meetups`, add
 * **#24** OpenWeatherMap — weather card in MeetupDetailScreen
 * **#25** Dog park picker — GPS + SerpAPI + ModalBottomSheet → auto-fill meetup location
 * **#26** Backend proxy refactor — ALL third-party keys moved to Render env vars; Android never calls external APIs directly; `local.properties.example` added for collaborators
+
+### 2026-05-25 — Dog Animation + Date-Aware Weather (PRs #27–#28 → master)
+* **#27** Blinking dog Lottie (`lottie_dog.json`) — replaces splash animation in SplashScreen; DogListScreen empty state shows animated dog instead of generic icon
+* **#28** Weather forecast by meetup date — `/weather-forecast` backend endpoint (OWM current/forecast routing); `WeatherPreview` in CreateMeetupScreen (live preview when date changes); `WeatherChip` in MeetupListScreen cards (meetups within 5 days); `WeatherRepository.getWeatherForDate()` with hour-bucket cache; `WeatherCard` in MeetupDetailScreen updated to use forecast instead of current weather
 
 ---
 
