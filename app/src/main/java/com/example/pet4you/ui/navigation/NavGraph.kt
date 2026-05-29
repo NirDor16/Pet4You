@@ -5,6 +5,8 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
@@ -18,6 +20,7 @@ import com.example.pet4you.ui.auth.LoginScreen
 import com.example.pet4you.ui.auth.RegisterScreen
 import com.example.pet4you.ui.chat.AiChatScreen
 import com.example.pet4you.ui.dog.AddEditDogScreen
+import com.example.pet4you.ui.dog.DogAvatarScreen
 import com.example.pet4you.ui.dog.DogListScreen
 import com.example.pet4you.ui.home.DogOwnerHomeScreen
 import com.example.pet4you.ui.home.ServiceProviderHomeScreen
@@ -43,6 +46,7 @@ object Routes {
     const val SERVICE_PROVIDER_HOME = "service_provider_home"
     const val DOG_LIST             = "dog_list"
     const val ADD_EDIT_DOG         = "add_edit_dog?dogId={dogId}"
+    const val DOG_AVATAR           = "dog_avatar"
     const val REMINDER_LIST        = "reminder_list"
     const val ADD_EDIT_REMINDER    = "add_edit_reminder?reminderId={reminderId}"
     const val MEETUP_LIST          = "meetup_list"
@@ -189,9 +193,40 @@ fun NavGraph(
             route     = Routes.ADD_EDIT_DOG,
             arguments = listOf(navArgument("dogId") { type = NavType.StringType; nullable = true; defaultValue = null }),
         ) { backStackEntry ->
+            val avatarJson by backStackEntry.savedStateHandle
+                .getStateFlow("avatar_json", "")
+                .collectAsState()
             AddEditDogScreen(
-                dogId          = backStackEntry.arguments?.getString("dogId"),
-                onNavigateBack = { navController.popBackStack() },
+                dogId              = backStackEntry.arguments?.getString("dogId"),
+                onNavigateBack     = { navController.popBackStack() },
+                onNavigateToAvatar = { breed, currentJson ->
+                    val encodedBreed = android.net.Uri.encode(breed)
+                    val encodedJson  = android.net.Uri.encode(currentJson ?: "")
+                    navController.navigate("${Routes.DOG_AVATAR}?breed=$encodedBreed&avatarJson=$encodedJson")
+                },
+                resultAvatarJson = avatarJson.ifEmpty { null }
+            )
+        }
+
+        composable(
+            route = "${Routes.DOG_AVATAR}?breed={breed}&avatarJson={avatarJson}",
+            arguments = listOf(
+                navArgument("breed")      { type = NavType.StringType; defaultValue = "" },
+                navArgument("avatarJson") { type = NavType.StringType; defaultValue = "" }
+            )
+        ) { backStackEntry ->
+            val breed      = backStackEntry.arguments?.getString("breed")      ?: ""
+            val avatarJson = backStackEntry.arguments?.getString("avatarJson") ?: ""
+            DogAvatarScreen(
+                breed             = breed,
+                initialAvatarJson = avatarJson,
+                onSave = { savedJson ->
+                    navController.previousBackStackEntry
+                        ?.savedStateHandle
+                        ?.set("avatar_json", savedJson)
+                    navController.popBackStack()
+                },
+                onNavigateBack = { navController.popBackStack() }
             )
         }
 

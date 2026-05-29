@@ -33,6 +33,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -58,17 +59,22 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import coil.compose.SubcomposeAsyncImage
+import com.example.pet4you.data.model.DogAvatar
 import com.example.pet4you.repository.DogCeoRepository
 import com.example.pet4you.ui.components.BreedSelector
+import com.example.pet4you.ui.components.DogAvatarCanvas
 import com.example.pet4you.ui.components.LoadingBox
 import com.example.pet4you.ui.components.Pet4YouTopBar
 import com.example.pet4you.viewmodel.DogActionState
 import com.example.pet4you.viewmodel.DogViewModel
+import com.google.gson.Gson
 
 @Composable
 fun AddEditDogScreen(
     dogId: String?,
     onNavigateBack: () -> Unit,
+    onNavigateToAvatar: (breed: String, avatarJson: String?) -> Unit = { _, _ -> },
+    resultAvatarJson: String? = null,
     viewModel: DogViewModel = viewModel(),
 ) {
     val isEditMode        = !dogId.isNullOrEmpty()
@@ -78,6 +84,7 @@ fun AddEditDogScreen(
     var notes             by remember { mutableStateOf("") }
     var existingPhotoUrl  by remember { mutableStateOf("") }
     var selectedImageUri  by remember { mutableStateOf<Uri?>(null) }
+    var pendingAvatar     by remember { mutableStateOf<DogAvatar?>(null) }
     val dogActionState    by viewModel.dogActionState.collectAsState()
 
     val photoPickerLauncher = rememberLauncherForActivityResult(
@@ -91,11 +98,19 @@ fun AddEditDogScreen(
             val dog = (dogActionState as DogActionState.DogLoaded).dog
             name = dog.name; breed = dog.breed; birthDate = dog.birthDate
             notes = dog.notes; existingPhotoUrl = dog.photoUrl
+            pendingAvatar = dog.avatar
         }
         if (dogActionState is DogActionState.Success) {
             delay(1400)
             viewModel.resetActionState()
             onNavigateBack()
+        }
+    }
+
+    LaunchedEffect(resultAvatarJson) {
+        if (!resultAvatarJson.isNullOrEmpty()) {
+            runCatching { Gson().fromJson(resultAvatarJson, DogAvatar::class.java) }
+                .getOrNull()?.let { pendingAvatar = it }
         }
     }
 
@@ -155,6 +170,53 @@ fun AddEditDogScreen(
                     }
                 }
 
+                Spacer(Modifier.height(12.dp))
+
+                Row(
+                    modifier              = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    OutlinedButton(
+                        onClick  = { photoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(Icons.Filled.CameraAlt, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text("Upload Photo")
+                    }
+                    OutlinedButton(
+                        onClick  = {
+                            val currentJson = pendingAvatar?.let { Gson().toJson(it) }
+                            onNavigateToAvatar(breed, currentJson)
+                        },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(Icons.Filled.Pets, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text(if (pendingAvatar != null) "Edit Avatar" else "Create Avatar")
+                    }
+                }
+
+                if (pendingAvatar != null) {
+                    Spacer(Modifier.height(8.dp))
+                    Row(
+                        modifier              = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                        verticalAlignment     = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        DogAvatarCanvas(
+                            avatar   = pendingAvatar!!,
+                            modifier = Modifier.size(80.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            "Avatar preview",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
                 OutlinedTextField(
                     value         = name,
                     onValueChange = { name = it },
@@ -201,8 +263,8 @@ fun AddEditDogScreen(
 
                 Button(
                     onClick  = {
-                        if (isEditMode) viewModel.updateDog(dogId!!, name, breed, birthDate, notes, selectedImageUri)
-                        else viewModel.addDog(name, breed, birthDate, notes, selectedImageUri)
+                        if (isEditMode) viewModel.updateDog(dogId!!, name, breed, birthDate, notes, selectedImageUri, avatar = pendingAvatar)
+                        else viewModel.addDog(name, breed, birthDate, notes, selectedImageUri, avatar = pendingAvatar)
                     },
                     enabled  = dogActionState !is DogActionState.Loading,
                     modifier = Modifier.fillMaxWidth().height(52.dp),
