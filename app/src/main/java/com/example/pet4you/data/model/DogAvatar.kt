@@ -36,13 +36,16 @@ fun DogAvatar.toMap(): Map<String, String> = mapOf(
     "accessory" to accessory.name
 )
 
+private inline fun <reified T : Enum<T>> enumOrDefault(name: String?, default: T): T =
+    name?.let { runCatching { enumValueOf<T>(it) }.getOrNull() } ?: default
+
 fun Map<String, Any>.toDogAvatar() = DogAvatar(
-    bodyShape = BodyShape.valueOf((this["bodyShape"] as? String) ?: "ROUND"),
-    furColor  = FurColor.valueOf((this["furColor"]  as? String) ?: "GOLDEN"),
-    earType   = EarType.valueOf((this["earType"]   as? String) ?: "FLOPPY"),
-    eyeType   = EyeType.valueOf((this["eyeType"]   as? String) ?: "NORMAL"),
-    tailType  = TailType.valueOf((this["tailType"]  as? String) ?: "STRAIGHT"),
-    accessory = Accessory.valueOf((this["accessory"] as? String) ?: "NONE")
+    bodyShape = enumOrDefault(this["bodyShape"] as? String, BodyShape.ROUND),
+    furColor  = enumOrDefault(this["furColor"]  as? String, FurColor.GOLDEN),
+    earType   = enumOrDefault(this["earType"]   as? String, EarType.FLOPPY),
+    eyeType   = enumOrDefault(this["eyeType"]   as? String, EyeType.NORMAL),
+    tailType  = enumOrDefault(this["tailType"]  as? String, TailType.STRAIGHT),
+    accessory = enumOrDefault(this["accessory"] as? String, Accessory.NONE),
 )
 
 val BREED_PRESETS: Map<String, DogAvatar> = mapOf(

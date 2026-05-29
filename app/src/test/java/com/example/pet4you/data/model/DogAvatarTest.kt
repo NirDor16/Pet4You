@@ -60,4 +60,19 @@ class DogAvatarTest {
         val roundtripped = (original.toMap() as Map<String, Any>).toDogAvatar()
         assertEquals(original, roundtripped)
     }
+
+    @Test
+    fun `toDogAvatar uses defaults for invalid enum string values`() {
+        val map: Map<String, Any> = mapOf(
+            "bodyShape" to "INVALID",
+            "furColor"  to "UNKNOWN_COLOR",
+            "tailType"  to "FLYING"
+        )
+        val avatar = map.toDogAvatar()
+        assertEquals(BodyShape.ROUND,    avatar.bodyShape)
+        assertEquals(FurColor.GOLDEN,    avatar.furColor)
+        assertEquals(TailType.STRAIGHT,  avatar.tailType)
+        // unspecified fields still get defaults
+        assertEquals(EarType.FLOPPY,     avatar.earType)
+    }
 }
