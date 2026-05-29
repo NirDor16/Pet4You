@@ -1,6 +1,8 @@
 package com.example.pet4you.ui.dog
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.draw.clip
@@ -36,12 +38,16 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
@@ -50,12 +56,14 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.pet4you.data.model.Dog
 import com.example.pet4you.repository.DogCeoRepository
+import com.example.pet4you.ui.components.DogAvatarCanvas
 import com.example.pet4you.ui.components.ErrorMessage
 import com.example.pet4you.ui.components.LoadingBox
 import com.example.pet4you.ui.components.Pet4YouTopBar
 import com.example.pet4you.viewmodel.DogActionState
 import com.example.pet4you.viewmodel.DogListState
 import com.example.pet4you.viewmodel.DogViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun DogListScreen(
@@ -66,11 +74,14 @@ fun DogListScreen(
 ) {
     val dogListState   by viewModel.dogListState.collectAsState()
     val dogActionState by viewModel.dogActionState.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope             = rememberCoroutineScope()
 
     LaunchedEffect(Unit) { viewModel.loadDogs() }
 
     Scaffold(
         topBar = { Pet4YouTopBar(title = "My Dogs", onBack = onNavigateBack) },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             FloatingActionButton(
                 onClick           = onNavigateToAdd,
@@ -107,9 +118,14 @@ fun DogListScreen(
                         ) {
                             items(dogs, key = { it.dogId }) { dog ->
                                 DogCard(
-                                    dog      = dog,
-                                    onEdit   = { onNavigateToEdit(dog.dogId) },
-                                    onDelete = { viewModel.deleteDog(dog.dogId) },
+                                    dog         = dog,
+                                    onEdit      = { onNavigateToEdit(dog.dogId) },
+                                    onDelete    = { viewModel.deleteDog(dog.dogId) },
+                                    onLongPress = {
+                                        scope.launch {
+                                            snackbarHostState.showSnackbar("${dog.name} is happy to see you! 🐾")
+                                        }
+                                    }
                                 )
                             }
                         }
@@ -162,27 +178,30 @@ private fun DogEmptyState() {
 
 @Composable
 private fun DogAvatar(dog: Dog, size: Dp = 44.dp) {
-    if (dog.photoUrl.isNotEmpty()) {
-        AsyncImage(
+    val avatar          = dog.avatar
+    val needsBreedImage = dog.photoUrl.isEmpty() && avatar == null
+    val breedImageUrl by produceState<String?>(null, dog.breed, needsBreedImage) {
+        value = if (needsBreedImage) DogCeoRepository.getBreedImageUrl(dog.breed) else null
+    }
+
+    when {
+        dog.photoUrl.isNotEmpty() -> AsyncImage(
             model              = dog.photoUrl,
             contentDescription = dog.name,
             modifier           = Modifier.size(size).clip(CircleShape),
             contentScale       = ContentScale.Crop,
         )
-        return
-    }
-    val breedImageUrl by produceState<String?>(null, dog.breed) {
-        value = DogCeoRepository.getBreedImageUrl(dog.breed)
-    }
-    if (breedImageUrl != null) {
-        AsyncImage(
+        avatar != null -> DogAvatarCanvas(
+            avatar   = avatar,
+            modifier = Modifier.size(size)
+        )
+        breedImageUrl != null -> AsyncImage(
             model              = breedImageUrl,
             contentDescription = dog.name,
             modifier           = Modifier.size(size).clip(CircleShape),
             contentScale       = ContentScale.Crop,
         )
-    } else {
-        Box(
+        else -> Box(
             modifier         = Modifier
                 .size(size)
                 .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
@@ -197,10 +216,16 @@ private fun DogAvatar(dog: Dog, size: Dp = 44.dp) {
     }
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun DogCard(dog: Dog, onEdit: () -> Unit, onDelete: () -> Unit) {
+private fun DogCard(dog: Dog, onEdit: () -> Unit, onDelete: () -> Unit, onLongPress: () -> Unit) {
     ElevatedCard(
-        modifier  = Modifier.fillMaxWidth(),
+        modifier  = Modifier
+            .fillMaxWidth()
+            .combinedClickable(
+                onClick     = {},
+                onLongClick = { onLongPress() }
+            ),
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
     ) {
         Row(
