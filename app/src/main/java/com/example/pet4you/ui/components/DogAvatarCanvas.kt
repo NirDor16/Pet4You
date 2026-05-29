@@ -4,6 +4,7 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -12,6 +13,8 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import com.example.pet4you.data.model.*
+
+private val InnerEarPink = Color(0xFFFFB3BA)
 
 @Composable
 fun DogAvatarCanvas(
@@ -49,58 +52,64 @@ fun DogAvatarCanvas(
     val effectiveTail  = if (animated) tailAngle    else 0f
     val effectiveBlink = if (animated) blinkProgress else 0f
 
-    val fur  = avatar.furColor.toColor()
-    val dark = Color(
-        red   = (fur.red   * 0.68f).coerceIn(0f, 1f),
-        green = (fur.green * 0.68f).coerceIn(0f, 1f),
-        blue  = (fur.blue  * 0.68f).coerceIn(0f, 1f)
-    )
+    val fur  = remember(avatar.furColor) { avatar.furColor.toColor() }
+    val dark = remember(fur) {
+        Color(
+            red   = (fur.red   * 0.68f).coerceIn(0f, 1f),
+            green = (fur.green * 0.68f).coerceIn(0f, 1f),
+            blue  = (fur.blue  * 0.68f).coerceIn(0f, 1f)
+        )
+    }
+
+    val scratchPath = remember { Path() }
 
     Canvas(modifier = modifier) {
         val s  = size.minDimension
         val cx = size.width  / 2f
         val cy = size.height / 2f
 
-        drawEars(avatar.earType, fur, dark, cx, cy, s)
+        drawEars(avatar.earType, fur, dark, cx, cy, s, scratchPath)
         drawBody(avatar.bodyShape, fur, cx, cy, s)
-        drawTail(avatar.tailType, dark, cx, cy, s, effectiveTail)
-        drawSnout(fur, dark, cx, cy, s)
+        drawTail(avatar.tailType, dark, cx, cy, s, effectiveTail, scratchPath)
+        drawSnout(fur, dark, cx, cy, s, scratchPath)
         drawEyes(avatar.eyeType, cx, cy, s, effectiveBlink)
-        drawAccessory(avatar.accessory, dark, cx, cy, s)
+        drawAccessory(avatar.accessory, dark, cx, cy, s, scratchPath)
         if (avatar.furColor == FurColor.SPOTTED) drawSpots(dark, cx, cy, s)
     }
 }
 
-private fun DrawScope.drawEars(type: EarType, fur: Color, dark: Color, cx: Float, cy: Float, s: Float) {
+private fun DrawScope.drawEars(type: EarType, fur: Color, dark: Color, cx: Float, cy: Float, s: Float, path: Path) {
     when (type) {
         EarType.FLOPPY -> {
-            listOf(-1f, 1f).forEach { side ->
+            for (side in floatArrayOf(-1f, 1f)) {
                 drawCircle(dark, radius = s * 0.17f, center = Offset(cx + side * s * 0.32f, cy + s * 0.10f))
-                drawCircle(Color(0xFFFFB3BA), radius = s * 0.10f, center = Offset(cx + side * s * 0.32f, cy + s * 0.10f))
+                drawCircle(InnerEarPink, radius = s * 0.10f, center = Offset(cx + side * s * 0.32f, cy + s * 0.10f))
             }
         }
         EarType.POINTY -> {
-            listOf(-1f, 1f).forEach { side ->
-                val path = Path().apply {
+            for (side in floatArrayOf(-1f, 1f)) {
+                path.reset()
+                path.apply {
                     moveTo(cx + side * s * 0.22f, cy - s * 0.45f)
                     lineTo(cx + side * s * 0.38f, cy - s * 0.22f)
                     lineTo(cx + side * s * 0.10f, cy - s * 0.22f)
                     close()
                 }
                 drawPath(path, dark)
-                val inner = Path().apply {
+                path.reset()
+                path.apply {
                     moveTo(cx + side * s * 0.22f, cy - s * 0.39f)
                     lineTo(cx + side * s * 0.33f, cy - s * 0.25f)
                     lineTo(cx + side * s * 0.13f, cy - s * 0.25f)
                     close()
                 }
-                drawPath(inner, Color(0xFFFFB3BA))
+                drawPath(path, InnerEarPink)
             }
         }
         EarType.ROUND -> {
-            listOf(-1f, 1f).forEach { side ->
+            for (side in floatArrayOf(-1f, 1f)) {
                 drawCircle(dark, radius = s * 0.14f, center = Offset(cx + side * s * 0.30f, cy - s * 0.30f))
-                drawCircle(Color(0xFFFFB3BA), radius = s * 0.08f, center = Offset(cx + side * s * 0.30f, cy - s * 0.30f))
+                drawCircle(InnerEarPink, radius = s * 0.08f, center = Offset(cx + side * s * 0.30f, cy - s * 0.30f))
             }
         }
     }
@@ -118,7 +127,7 @@ private fun DrawScope.drawBody(shape: BodyShape, fur: Color, cx: Float, cy: Floa
     }
 }
 
-private fun DrawScope.drawTail(type: TailType, dark: Color, cx: Float, cy: Float, s: Float, angle: Float) {
+private fun DrawScope.drawTail(type: TailType, dark: Color, cx: Float, cy: Float, s: Float, angle: Float, path: Path) {
     val pivot = Offset(cx + s * 0.36f, cy + s * 0.10f)
     rotate(angle, pivot = pivot) {
         when (type) {
@@ -126,7 +135,8 @@ private fun DrawScope.drawTail(type: TailType, dark: Color, cx: Float, cy: Float
                 topLeft = Offset(cx + s * 0.34f, cy + s * 0.02f),
                 size    = Size(s * 0.14f, s * 0.30f))
             TailType.CURLY -> {
-                val path = Path().apply {
+                path.reset()
+                path.apply {
                     moveTo(cx + s * 0.36f, cy + s * 0.10f)
                     cubicTo(
                         cx + s * 0.55f, cy + s * 0.10f,
@@ -143,7 +153,7 @@ private fun DrawScope.drawTail(type: TailType, dark: Color, cx: Float, cy: Float
     }
 }
 
-private fun DrawScope.drawSnout(fur: Color, dark: Color, cx: Float, cy: Float, s: Float) {
+private fun DrawScope.drawSnout(fur: Color, dark: Color, cx: Float, cy: Float, s: Float, path: Path) {
     val snoutColor = Color(
         red   = (fur.red   * 1.15f).coerceIn(0f, 1f),
         green = (fur.green * 1.15f).coerceIn(0f, 1f),
@@ -153,15 +163,16 @@ private fun DrawScope.drawSnout(fur: Color, dark: Color, cx: Float, cy: Float, s
     drawOval(dark,
         topLeft = Offset(cx - s * 0.045f, cy + s * 0.06f),
         size    = Size(s * 0.09f, s * 0.06f))
-    val mouth = Path().apply {
+    path.reset()
+    path.apply {
         moveTo(cx - s * 0.06f, cy + s * 0.15f)
         quadraticTo(cx, cy + s * 0.20f, cx + s * 0.06f, cy + s * 0.15f)
     }
-    drawPath(mouth, dark, style = Stroke(width = s * 0.025f, cap = StrokeCap.Round))
+    drawPath(path, dark, style = Stroke(width = s * 0.025f, cap = StrokeCap.Round))
 }
 
 private fun DrawScope.drawEyes(type: EyeType, cx: Float, cy: Float, s: Float, blink: Float) {
-    listOf(-1f, 1f).forEach { side ->
+    for (side in floatArrayOf(-1f, 1f)) {
         val ex = cx + side * s * 0.13f
         val ey = cy - s * 0.06f
         when (type) {
@@ -185,7 +196,7 @@ private fun DrawScope.drawEyes(type: EyeType, cx: Float, cy: Float, s: Float, bl
     }
 }
 
-private fun DrawScope.drawAccessory(acc: Accessory, dark: Color, cx: Float, cy: Float, s: Float) {
+private fun DrawScope.drawAccessory(acc: Accessory, dark: Color, cx: Float, cy: Float, s: Float, path: Path) {
     when (acc) {
         Accessory.NONE -> Unit
         Accessory.COLLAR -> drawRect(
@@ -194,8 +205,9 @@ private fun DrawScope.drawAccessory(acc: Accessory, dark: Color, cx: Float, cy: 
             size    = Size(s * 0.56f, s * 0.08f)
         )
         Accessory.BOW -> {
-            listOf(-1f, 1f).forEach { side ->
-                val path = Path().apply {
+            for (side in floatArrayOf(-1f, 1f)) {
+                path.reset()
+                path.apply {
                     moveTo(cx,           cy - s * 0.43f)
                     lineTo(cx + side * s * 0.18f, cy - s * 0.50f)
                     lineTo(cx + side * s * 0.18f, cy - s * 0.36f)
@@ -214,7 +226,8 @@ private fun DrawScope.drawAccessory(acc: Accessory, dark: Color, cx: Float, cy: 
                 size    = Size(s * 0.60f, s * 0.10f))
         }
         Accessory.BANDANA -> {
-            val path = Path().apply {
+            path.reset()
+            path.apply {
                 moveTo(cx - s * 0.20f, cy + s * 0.18f)
                 lineTo(cx + s * 0.20f, cy + s * 0.18f)
                 lineTo(cx,             cy + s * 0.32f)
