@@ -161,7 +161,7 @@ private fun DogEmptyState() {
 }
 
 @Composable
-private fun DogAvatar(dog: Dog, size: Dp = 44.dp) {
+private fun DogAvatar(dog: Dog, size: Dp = 56.dp) {
     if (dog.photoUrl.isNotEmpty()) {
         AsyncImage(
             model              = dog.photoUrl,
@@ -190,7 +190,7 @@ private fun DogAvatar(dog: Dog, size: Dp = 44.dp) {
         ) {
             Text(
                 text  = dog.breed.firstOrNull()?.uppercaseChar()?.toString() ?: "?",
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
             )
         }
@@ -201,14 +201,14 @@ private fun DogAvatar(dog: Dog, size: Dp = 44.dp) {
 private fun DogCard(dog: Dog, onEdit: () -> Unit, onDelete: () -> Unit) {
     ElevatedCard(
         modifier  = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp),
     ) {
         Row(
-            modifier          = Modifier.padding(16.dp),
+            modifier          = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             DogAvatar(dog = dog)
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(14.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text     = dog.name,
