@@ -158,15 +158,15 @@ private fun RequestCard(
 
     ElevatedCard(
         modifier  = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp),
     ) {
-        Column(modifier = Modifier.padding(14.dp)) {
+        Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier              = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Column {
-                    Text("From: $ownerName", style = MaterialTheme.typography.titleSmall)
+                    Text("From: $ownerName", style = MaterialTheme.typography.titleMedium)
                     Text(
                         text  = "Dog: $dogName",
                         style = MaterialTheme.typography.bodySmall,

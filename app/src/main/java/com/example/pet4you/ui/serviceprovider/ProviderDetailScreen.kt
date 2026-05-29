@@ -120,7 +120,7 @@ private fun ProviderDetailContent(
     ) {
         ElevatedCard(
             modifier  = Modifier.fillMaxWidth(),
-            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
+            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp),
         ) {
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(
@@ -163,7 +163,7 @@ private fun ProviderDetailContent(
         if (provider.description.isNotEmpty()) {
             ElevatedCard(
                 modifier  = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
+                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp),
             ) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     InfoRow(icon = Icons.Filled.Notes, text = "About")

@@ -106,7 +106,7 @@ private fun ScheduleCard(
 
     ElevatedCard(
         modifier  = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp),
     ) {
         Row(modifier = Modifier.fillMaxWidth()) {
             Box(
@@ -119,16 +119,16 @@ private fun ScheduleCard(
                     ),
             )
             Column(
-                modifier            = Modifier.padding(14.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
+                modifier            = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 Text(
                     text  = "$dogName — $ownerName",
-                    style = MaterialTheme.typography.titleSmall,
+                    style = MaterialTheme.typography.titleMedium,
                 )
                 Text(
                     text  = request.providerType,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.primary,
                 )
                 HorizontalDivider(
@@ -139,8 +139,8 @@ private fun ScheduleCard(
                     Icon(
                         imageVector        = Icons.Filled.CalendarToday,
                         contentDescription = null,
-                        modifier           = Modifier.size(14.dp),
-                        tint               = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier           = Modifier.size(16.dp),
+                        tint               = MaterialTheme.colorScheme.primary,
                     )
                     Spacer(Modifier.width(6.dp))
                     Text(

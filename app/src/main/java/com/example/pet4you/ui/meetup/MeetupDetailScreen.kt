@@ -145,7 +145,7 @@ private fun MeetupDetailContent(
     ) {
         ElevatedCard(
             modifier  = Modifier.fillMaxWidth(),
-            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
+            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp),
         ) {
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(meetup.title.ifEmpty { "Meetup" }, style = MaterialTheme.typography.headlineSmall)
@@ -192,7 +192,7 @@ private fun MeetupDetailContent(
         if (meetup.description.isNotEmpty()) {
             ElevatedCard(
                 modifier  = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
+                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp),
             ) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     InfoRow(icon = Icons.Filled.Notes, text = "Description")
@@ -208,7 +208,7 @@ private fun MeetupDetailContent(
         if (meetup.dogBreeds.isNotEmpty()) {
             ElevatedCard(
                 modifier  = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
+                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp),
             ) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     InfoRow(icon = Icons.Filled.Pets, text = "Dog Breeds")
@@ -287,7 +287,7 @@ private fun WeatherCard(location: String, datetimeMs: Long) {
 
         ElevatedCard(
             modifier  = Modifier.fillMaxWidth(),
-            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
+            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp),
         ) {
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 InfoRow(icon = Icons.Filled.WbSunny, text = "Weather at location")

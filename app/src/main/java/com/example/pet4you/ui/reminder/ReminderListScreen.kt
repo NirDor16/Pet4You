@@ -133,9 +133,9 @@ private fun ReminderCard(
 
     ElevatedCard(
         modifier  = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp),
     ) {
-        Column(modifier = Modifier.padding(14.dp)) {
+        Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 modifier          = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -144,13 +144,13 @@ private fun ReminderCard(
                     imageVector        = Icons.Filled.Notifications,
                     contentDescription = null,
                     tint               = MaterialTheme.colorScheme.primary,
-                    modifier           = Modifier.size(20.dp),
+                    modifier           = Modifier.size(22.dp),
                 )
-                Spacer(Modifier.width(8.dp))
+                Spacer(Modifier.width(10.dp))
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text  = ReminderType.displayName(reminder.type),
-                        style = MaterialTheme.typography.titleSmall,
+                        style = MaterialTheme.typography.titleMedium,
                     )
                     Text(
                         text  = dogName,
@@ -161,8 +161,8 @@ private fun ReminderCard(
                         Icon(
                             imageVector        = Icons.Filled.CalendarToday,
                             contentDescription = null,
-                            modifier           = Modifier.size(12.dp),
-                            tint               = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier           = Modifier.size(14.dp),
+                            tint               = MaterialTheme.colorScheme.primary,
                         )
                         Spacer(Modifier.width(4.dp))
                         Text(

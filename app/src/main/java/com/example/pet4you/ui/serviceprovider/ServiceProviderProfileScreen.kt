@@ -103,8 +103,8 @@ fun ServiceProviderProfileScreen(
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         Column(
-                            modifier            = Modifier.padding(14.dp),
-                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier            = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
