@@ -69,6 +69,8 @@ import com.example.pet4you.viewmodel.DogActionState
 import com.example.pet4you.viewmodel.DogViewModel
 import com.google.gson.Gson
 
+private val gson = Gson()
+
 @Composable
 fun AddEditDogScreen(
     dogId: String?,
@@ -109,7 +111,7 @@ fun AddEditDogScreen(
 
     LaunchedEffect(resultAvatarJson) {
         if (!resultAvatarJson.isNullOrEmpty()) {
-            runCatching { Gson().fromJson(resultAvatarJson, DogAvatar::class.java) }
+            runCatching { gson.fromJson(resultAvatarJson, DogAvatar::class.java) }
                 .getOrNull()?.let { pendingAvatar = it }
         }
     }
@@ -186,7 +188,7 @@ fun AddEditDogScreen(
                     }
                     OutlinedButton(
                         onClick  = {
-                            val currentJson = pendingAvatar?.let { Gson().toJson(it) }
+                            val currentJson = pendingAvatar?.let { gson.toJson(it) }
                             onNavigateToAvatar(breed, currentJson)
                         },
                         modifier = Modifier.weight(1f)
@@ -197,7 +199,7 @@ fun AddEditDogScreen(
                     }
                 }
 
-                if (pendingAvatar != null) {
+                pendingAvatar?.let { avatar ->
                     Spacer(Modifier.height(8.dp))
                     Row(
                         modifier              = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
@@ -205,7 +207,7 @@ fun AddEditDogScreen(
                         horizontalArrangement = Arrangement.Center
                     ) {
                         DogAvatarCanvas(
-                            avatar   = pendingAvatar!!,
+                            avatar   = avatar,
                             modifier = Modifier.size(80.dp)
                         )
                         Spacer(Modifier.width(8.dp))
