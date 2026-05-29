@@ -115,21 +115,21 @@ private fun ProviderCard(provider: ServiceProvider, onClick: () -> Unit) {
     ElevatedCard(
         onClick   = onClick,
         modifier  = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp),
     ) {
         Row(
-            modifier          = Modifier.padding(14.dp),
+            modifier          = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
                 modifier         = Modifier
-                    .size(44.dp)
+                    .size(52.dp)
                     .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     text  = provider.fullName.firstOrNull()?.uppercaseChar()?.toString() ?: "?",
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
                 )
             }
@@ -141,7 +141,7 @@ private fun ProviderCard(provider: ServiceProvider, onClick: () -> Unit) {
                 )
                 Text(
                     text  = ProviderType.displayName(provider.providerType),
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.primary,
                 )
                 if (provider.location.isNotEmpty()) {
