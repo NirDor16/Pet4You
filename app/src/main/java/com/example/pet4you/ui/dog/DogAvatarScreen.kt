@@ -21,6 +21,19 @@ import com.example.pet4you.ui.components.DogAvatarCanvas
 import com.example.pet4you.ui.components.Pet4YouTopBar
 import com.google.gson.Gson
 
+private val gson = Gson()
+
+private val AvatarTabs = listOf("Body", "Color", "Ears", "Tail", "Extras")
+
+private val FurColorMap = listOf(
+    FurColor.GOLDEN  to Color(0xFFD4A017),
+    FurColor.BLACK   to Color(0xFF2C2C2C),
+    FurColor.WHITE   to Color(0xFFF0EDE8),
+    FurColor.BROWN   to Color(0xFF8B5E3C),
+    FurColor.GRAY    to Color(0xFF8B8B8B),
+    FurColor.SPOTTED to Color(0xFFF0EDE8)
+)
+
 @Composable
 fun DogAvatarScreen(
     breed: String,
@@ -30,14 +43,13 @@ fun DogAvatarScreen(
 ) {
     val startAvatar = remember(initialAvatarJson, breed) {
         if (initialAvatarJson.isNotEmpty())
-            runCatching { Gson().fromJson(initialAvatarJson, DogAvatar::class.java) }.getOrNull()
+            runCatching { gson.fromJson(initialAvatarJson, DogAvatar::class.java) }.getOrNull()
                 ?: breedPreset(breed)
         else breedPreset(breed)
     }
 
     var avatar by remember { mutableStateOf(startAvatar) }
     var selectedTab by remember { mutableIntStateOf(0) }
-    val tabs = listOf("Body", "Color", "Ears", "Tail", "Extras")
 
     Scaffold(
         topBar = {
@@ -49,7 +61,7 @@ fun DogAvatarScreen(
         bottomBar = {
             Box(Modifier.fillMaxWidth().padding(16.dp)) {
                 Button(
-                    onClick   = { onSave(Gson().toJson(avatar)) },
+                    onClick   = { onSave(gson.toJson(avatar)) },
                     modifier  = Modifier.fillMaxWidth().height(52.dp)
                 ) {
                     Text("Save Avatar", style = MaterialTheme.typography.titleMedium)
@@ -69,7 +81,7 @@ fun DogAvatarScreen(
             )
             Spacer(Modifier.height(16.dp))
             TabRow(selectedTabIndex = selectedTab) {
-                tabs.forEachIndexed { i, title ->
+                AvatarTabs.forEachIndexed { i, title ->
                     Tab(
                         selected = selectedTab == i,
                         onClick  = { selectedTab = i },
@@ -102,13 +114,13 @@ private fun <T> OptionRow(
         items(options) { (value, label) ->
             val isSelected = value == selected
             Surface(
+                onClick   = { onSelect(value) },
                 shape     = RoundedCornerShape(12.dp),
                 color     = if (isSelected) MaterialTheme.colorScheme.primaryContainer
                             else MaterialTheme.colorScheme.surfaceVariant,
                 modifier  = Modifier
                     .height(48.dp)
                     .widthIn(min = 80.dp)
-                    .clickable { onSelect(value) }
                     .then(
                         if (isSelected) Modifier.border(
                             2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(12.dp)
@@ -173,19 +185,11 @@ private fun ExtrasTab(selected: Accessory, onSelect: (Accessory) -> Unit) {
 
 @Composable
 private fun ColorTab(selected: FurColor, onSelect: (FurColor) -> Unit) {
-    val colorMap = listOf(
-        FurColor.GOLDEN  to Color(0xFFD4A017),
-        FurColor.BLACK   to Color(0xFF2C2C2C),
-        FurColor.WHITE   to Color(0xFFF0EDE8),
-        FurColor.BROWN   to Color(0xFF8B5E3C),
-        FurColor.GRAY    to Color(0xFF8B8B8B),
-        FurColor.SPOTTED to Color(0xFFF0EDE8)
-    )
     LazyRow(
         contentPadding = PaddingValues(horizontal = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        items(colorMap) { (fur, color) ->
+        items(FurColorMap) { (fur, color) ->
             val isSelected = fur == selected
             Box(
                 modifier = Modifier
@@ -202,7 +206,7 @@ private fun ColorTab(selected: FurColor, onSelect: (FurColor) -> Unit) {
                     Box(
                         Modifier
                             .size(14.dp)
-                            .offset(x = 10.dp, y = 8.dp)
+                            .padding(start = 10.dp, top = 8.dp)
                             .clip(CircleShape)
                             .background(Color(0xFF8B5E3C).copy(alpha = 0.4f))
                     )
