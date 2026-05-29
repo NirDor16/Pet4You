@@ -17,7 +17,10 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Pets
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
@@ -56,7 +59,7 @@ fun AiChatScreen(
     }
 
     Scaffold(
-        topBar = { Pet4YouTopBar(title = "AI Assistant", onBack = onNavigateBack) },
+        topBar = { Pet4YouTopBar(title = "Dog Assistant", onBack = onNavigateBack) },
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -64,6 +67,27 @@ fun AiChatScreen(
                 .padding(paddingValues)
                 .imePadding(),
         ) {
+            Row(
+                modifier              = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                verticalAlignment     = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
+            ) {
+                Icon(
+                    imageVector        = Icons.Filled.Pets,
+                    contentDescription = null,
+                    modifier           = Modifier.size(14.dp),
+                    tint               = MaterialTheme.colorScheme.primary,
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    text  = "Ask anything about your dog",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             LazyColumn(
                 state               = listState,
                 modifier            = Modifier.weight(1f).fillMaxWidth(),
@@ -143,13 +167,13 @@ private fun MessageBubble(message: ChatMessage) {
                 .background(
                     color = if (isUser) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
                     shape = RoundedCornerShape(
-                        topStart    = 16.dp,
-                        topEnd      = 16.dp,
-                        bottomStart = if (isUser) 16.dp else 4.dp,
-                        bottomEnd   = if (isUser) 4.dp else 16.dp,
+                        topStart    = 20.dp,
+                        topEnd      = 20.dp,
+                        bottomStart = if (isUser) 20.dp else 6.dp,
+                        bottomEnd   = if (isUser) 6.dp else 20.dp,
                     ),
                 )
-                .padding(horizontal = 12.dp, vertical = 8.dp),
+                .padding(horizontal = 14.dp, vertical = 10.dp),
         ) {
             Text(
                 text  = message.content,
