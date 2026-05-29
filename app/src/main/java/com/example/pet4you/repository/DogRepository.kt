@@ -69,6 +69,7 @@ class DogRepository {
         attachAvatar(doc, dog)
     }
 
+    // avatar: pass non-null to write/overwrite; null = leave existing avatar field untouched
     suspend fun updateDog(
         dogId: String, name: String, breed: String,
         birthDate: String, notes: String,
