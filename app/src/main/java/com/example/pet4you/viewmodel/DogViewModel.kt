@@ -4,23 +4,24 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pet4you.data.model.Dog
+import com.example.pet4you.data.model.DogAvatar
 import com.example.pet4you.repository.DogRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 sealed class DogListState {
-    object Idle : DogListState()
+    object Idle    : DogListState()
     object Loading : DogListState()
     data class Success(val dogs: List<Dog>) : DogListState()
-    data class Error(val message: String) : DogListState()
+    data class Error(val message: String)   : DogListState()
 }
 
 sealed class DogActionState {
-    object Idle : DogActionState()
+    object Idle    : DogActionState()
     object Loading : DogActionState()
     object Success : DogActionState()
-    data class DogLoaded(val dog: Dog) : DogActionState()
+    data class DogLoaded(val dog: Dog)    : DogActionState()
     data class Error(val message: String) : DogActionState()
 }
 
@@ -28,7 +29,7 @@ class DogViewModel : ViewModel() {
 
     private val repository = DogRepository()
 
-    private val _dogListState = MutableStateFlow<DogListState>(DogListState.Idle)
+    private val _dogListState   = MutableStateFlow<DogListState>(DogListState.Idle)
     val dogListState: StateFlow<DogListState> = _dogListState
 
     private val _dogActionState = MutableStateFlow<DogActionState>(DogActionState.Idle)
@@ -38,11 +39,10 @@ class DogViewModel : ViewModel() {
         viewModelScope.launch {
             _dogListState.value = DogListState.Loading
             val result = repository.getDogsForCurrentUser()
-            _dogListState.value = if (result.isSuccess) {
+            _dogListState.value = if (result.isSuccess)
                 DogListState.Success(result.getOrNull()!!)
-            } else {
+            else
                 DogListState.Error(result.exceptionOrNull()?.message ?: "Failed to load dogs")
-            }
         }
     }
 
@@ -50,37 +50,46 @@ class DogViewModel : ViewModel() {
         viewModelScope.launch {
             _dogActionState.value = DogActionState.Loading
             val result = repository.getDog(dogId)
-            _dogActionState.value = if (result.isSuccess) {
+            _dogActionState.value = if (result.isSuccess)
                 DogActionState.DogLoaded(result.getOrNull()!!)
-            } else {
+            else
                 DogActionState.Error(result.exceptionOrNull()?.message ?: "Failed to load dog")
-            }
         }
     }
 
-    fun addDog(name: String, breed: String, birthDate: String, notes: String, photoUri: Uri? = null) {
+    fun addDog(
+        name: String, breed: String, birthDate: String,
+        notes: String, photoUri: Uri? = null, avatar: DogAvatar? = null
+    ) {
         viewModelScope.launch {
             _dogActionState.value = DogActionState.Loading
             val photoUrl = photoUri?.let { repository.uploadDogPhoto(it).getOrNull() ?: "" } ?: ""
-            val result = repository.addDog(name, breed, birthDate, notes, photoUrl)
-            _dogActionState.value = if (result.isSuccess) {
-                DogActionState.Success
-            } else {
-                DogActionState.Error(result.exceptionOrNull()?.message ?: "Failed to add dog")
-            }
+            val result = repository.addDog(name, breed, birthDate, notes, photoUrl, avatar)
+            _dogActionState.value = if (result.isSuccess) DogActionState.Success
+            else DogActionState.Error(result.exceptionOrNull()?.message ?: "Failed to add dog")
         }
     }
 
-    fun updateDog(dogId: String, name: String, breed: String, birthDate: String, notes: String, photoUri: Uri? = null) {
+    fun updateDog(
+        dogId: String, name: String, breed: String,
+        birthDate: String, notes: String,
+        photoUri: Uri? = null, avatar: DogAvatar? = null
+    ) {
         viewModelScope.launch {
             _dogActionState.value = DogActionState.Loading
             val photoUrl = photoUri?.let { repository.uploadDogPhoto(it).getOrNull() ?: "" } ?: ""
-            val result = repository.updateDog(dogId, name, breed, birthDate, notes, photoUrl)
-            _dogActionState.value = if (result.isSuccess) {
-                DogActionState.Success
-            } else {
-                DogActionState.Error(result.exceptionOrNull()?.message ?: "Failed to update dog")
-            }
+            val result = repository.updateDog(dogId, name, breed, birthDate, notes, photoUrl, avatar)
+            _dogActionState.value = if (result.isSuccess) DogActionState.Success
+            else DogActionState.Error(result.exceptionOrNull()?.message ?: "Failed to update dog")
+        }
+    }
+
+    fun saveAvatar(dogId: String, avatar: DogAvatar) {
+        viewModelScope.launch {
+            _dogActionState.value = DogActionState.Loading
+            val result = repository.saveAvatar(dogId, avatar)
+            _dogActionState.value = if (result.isSuccess) DogActionState.Success
+            else DogActionState.Error(result.exceptionOrNull()?.message ?: "Failed to save avatar")
         }
     }
 
@@ -88,13 +97,10 @@ class DogViewModel : ViewModel() {
         viewModelScope.launch {
             _dogActionState.value = DogActionState.Loading
             val result = repository.deleteDog(dogId)
-            if (result.isSuccess) {
-                loadDogs()
-            } else {
-                _dogActionState.value = DogActionState.Error(
-                    result.exceptionOrNull()?.message ?: "Failed to delete dog"
-                )
-            }
+            if (result.isSuccess) loadDogs()
+            else _dogActionState.value = DogActionState.Error(
+                result.exceptionOrNull()?.message ?: "Failed to delete dog"
+            )
         }
     }
 
