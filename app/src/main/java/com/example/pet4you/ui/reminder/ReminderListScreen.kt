@@ -45,6 +45,7 @@ import com.example.pet4you.data.model.ReminderType
 import com.example.pet4you.ui.components.EmptyState
 import com.example.pet4you.ui.components.ErrorMessage
 import com.example.pet4you.ui.components.LoadingBox
+import androidx.compose.ui.graphics.Color
 import com.example.pet4you.ui.components.PawBackground
 import com.example.pet4you.ui.components.Pet4YouTopBar
 import com.example.pet4you.ui.theme.DeepOrange
@@ -68,7 +69,9 @@ fun ReminderListScreen(
 
     LaunchedEffect(Unit) { viewModel.loadReminders() }
 
+    PawBackground(modifier = Modifier.fillMaxSize()) {
     Scaffold(
+        containerColor = Color.Transparent,
         topBar = { Pet4YouTopBar(title = "Reminders", onBack = onNavigateBack) },
         floatingActionButton = {
             FloatingActionButton(
@@ -80,12 +83,7 @@ fun ReminderListScreen(
             }
         },
     ) { padding ->
-        PawBackground(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-        ) {
-            Column(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
                 if (reminderActionState is ReminderActionState.Error) {
                     ErrorMessage(
                         message  = (reminderActionState as ReminderActionState.Error).message,
@@ -123,8 +121,8 @@ fun ReminderListScreen(
                     else -> {}
                 }
             }
-        }
     }
+    }   // closes PawBackground
 }
 
 @Composable

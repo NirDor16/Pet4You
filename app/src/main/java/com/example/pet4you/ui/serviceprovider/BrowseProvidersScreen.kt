@@ -40,6 +40,7 @@ import com.example.pet4you.data.model.ServiceProvider
 import com.example.pet4you.ui.components.EmptyState
 import com.example.pet4you.ui.components.ErrorMessage
 import com.example.pet4you.ui.components.LoadingBox
+import androidx.compose.ui.graphics.Color
 import com.example.pet4you.ui.components.PawBackground
 import com.example.pet4you.ui.components.Pet4YouTopBar
 import com.example.pet4you.ui.theme.DeepAmber
@@ -58,11 +59,12 @@ fun BrowseProvidersScreen(
 
     val activeFilter = (state as? BrowseProvidersState.Success)?.activeFilter
 
+    PawBackground(modifier = Modifier.fillMaxSize()) {
     Scaffold(
+        containerColor = Color.Transparent,
         topBar = { Pet4YouTopBar(title = "Find Services", onBack = onNavigateBack) },
     ) { padding ->
-        PawBackground(modifier = Modifier.fillMaxSize().padding(padding)) {
-        Column(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
             LazyRow(
                 modifier              = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -107,8 +109,8 @@ fun BrowseProvidersScreen(
                 else -> {}
             }
         }
-        }   // closes PawBackground
     }
+    }   // closes PawBackground
 }
 
 @Composable

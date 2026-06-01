@@ -39,7 +39,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.ui.graphics.Color
 import com.example.pet4you.data.model.ChatMessage
+import com.example.pet4you.ui.components.PawBackground
 import com.example.pet4you.ui.components.Pet4YouTopBar
 import com.example.pet4you.viewmodel.AiChatViewModel
 import com.example.pet4you.viewmodel.ChatState
@@ -58,7 +60,9 @@ fun AiChatScreen(
         if (messages.isNotEmpty()) listState.animateScrollToItem(messages.size - 1)
     }
 
+    PawBackground(modifier = Modifier.fillMaxSize()) {
     Scaffold(
+        containerColor = Color.Transparent,
         topBar = { Pet4YouTopBar(title = "Dog Assistant", onBack = onNavigateBack) },
     ) { paddingValues ->
         Column(
@@ -131,6 +135,7 @@ fun AiChatScreen(
             }
         }
     }
+    }   // closes PawBackground
 }
 
 @Composable
