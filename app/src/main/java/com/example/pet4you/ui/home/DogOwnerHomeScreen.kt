@@ -160,7 +160,7 @@ private fun HomeNavCard(item: HomeItem) {
         modifier  = Modifier.fillMaxWidth(),
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp),
         colors    = CardDefaults.elevatedCardColors(
-            containerColor = MaterialTheme.colorScheme.surface,
+            containerColor = Color.White,
         ),
     ) {
         Row(
