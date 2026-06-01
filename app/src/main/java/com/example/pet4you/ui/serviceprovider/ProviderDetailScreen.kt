@@ -51,7 +51,11 @@ import com.example.pet4you.data.model.ServiceProvider
 import com.example.pet4you.ui.components.ErrorMessage
 import com.example.pet4you.ui.components.InfoRow
 import com.example.pet4you.ui.components.LoadingBox
+import com.example.pet4you.ui.components.PawBackground
 import com.example.pet4you.ui.components.Pet4YouTopBar
+import com.example.pet4you.ui.components.SectionBanner
+import com.example.pet4you.ui.theme.DeepAmber
+import com.example.pet4you.ui.theme.SoftBeige
 import com.example.pet4you.viewmodel.ProviderDetailState
 import com.example.pet4you.viewmodel.ProviderDetailViewModel
 import com.example.pet4you.viewmodel.SendRequestState
@@ -110,14 +114,18 @@ private fun ProviderDetailContent(
     padding: PaddingValues,
     onSendRequestClick: () -> Unit,
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(padding)
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
+    PawBackground(modifier = Modifier.fillMaxSize().padding(padding)) {
+    Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+        SectionBanner(
+            icon           = Icons.Filled.Work,
+            subtitle       = ProviderType.displayName(provider.providerType),
+            containerColor = SoftBeige,
+            iconTint       = DeepAmber,
+        )
+        Column(
+            modifier            = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
         ElevatedCard(
             modifier  = Modifier.fillMaxWidth(),
             elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp),
@@ -188,7 +196,9 @@ private fun ProviderDetailContent(
                 style = MaterialTheme.typography.labelLarge,
             )
         }
-    }
+        }   // closes inner Column(padding 16dp)
+    }       // closes outer Column(scroll)
+    }       // closes PawBackground
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

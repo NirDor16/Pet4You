@@ -1,7 +1,10 @@
 package com.example.pet4you.ui.components
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
@@ -13,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Pets
@@ -327,5 +331,42 @@ private fun DrawScope.drawPawPrint(
             Offset(center.x + spread * 0.25f, center.y - spread * 1.35f),
             Offset(center.x + spread * 0.80f, center.y - spread * 1.00f),
         ).forEach { drawCircle(color, radius = toeR, center = it) }
+    }
+}
+
+@Composable
+fun SectionBanner(
+    icon: ImageVector,
+    subtitle: String,
+    containerColor: Color,
+    iconTint: Color,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier          = modifier
+            .fillMaxWidth()
+            .background(containerColor.copy(alpha = 0.55f))
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier         = Modifier
+                .size(36.dp)
+                .background(iconTint.copy(alpha = 0.15f), CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector        = icon,
+                contentDescription = null,
+                tint               = iconTint,
+                modifier           = Modifier.size(20.dp),
+            )
+        }
+        Spacer(Modifier.width(12.dp))
+        Text(
+            text  = subtitle,
+            style = MaterialTheme.typography.labelLarge,
+            color = iconTint,
+        )
     }
 }

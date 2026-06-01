@@ -39,6 +39,7 @@ import com.example.pet4you.data.model.ServiceRequest
 import com.example.pet4you.ui.components.EmptyState
 import com.example.pet4you.ui.components.ErrorMessage
 import com.example.pet4you.ui.components.LoadingBox
+import com.example.pet4you.ui.components.PawBackground
 import com.example.pet4you.ui.components.Pet4YouTopBar
 import com.example.pet4you.viewmodel.MyScheduleViewModel
 import com.example.pet4you.viewmodel.ScheduleState
@@ -58,20 +59,19 @@ fun MyScheduleScreen(
     Scaffold(
         topBar = { Pet4YouTopBar(title = "My Schedule", onBack = onBack) },
     ) { padding ->
+        PawBackground(modifier = Modifier.fillMaxSize().padding(padding)) {
         when (val s = state) {
-            is ScheduleState.Loading, ScheduleState.Idle -> LoadingBox(modifier = Modifier.padding(padding))
-            is ScheduleState.Error -> ErrorMessage(s.message, modifier = Modifier.padding(padding))
+            is ScheduleState.Loading, ScheduleState.Idle -> LoadingBox()
+            is ScheduleState.Error -> ErrorMessage(s.message)
             is ScheduleState.Success -> {
                 if (s.requests.isEmpty()) {
                     EmptyState(
                         icon     = Icons.Filled.CalendarMonth,
                         title    = "No scheduled appointments",
                         subtitle = "Approved requests will appear here",
-                        modifier = Modifier.padding(padding),
                     )
                 } else {
                     LazyColumn(
-                        modifier            = Modifier.padding(padding),
                         contentPadding      = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
@@ -87,6 +87,7 @@ fun MyScheduleScreen(
             }
             else -> {}
         }
+        }   // closes PawBackground
     }
 }
 

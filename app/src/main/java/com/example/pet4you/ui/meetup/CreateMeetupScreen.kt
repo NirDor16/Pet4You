@@ -28,6 +28,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.NearMe
 import androidx.compose.material.icons.filled.Notes
@@ -70,8 +71,12 @@ import com.example.pet4you.network.WeatherResponse
 import com.example.pet4you.repository.DogParkRepository
 import com.example.pet4you.repository.WeatherRepository
 import com.example.pet4you.ui.components.BreedSelector
+import com.example.pet4you.ui.components.PawBackground
 import com.example.pet4you.ui.components.Pet4YouTopBar
+import com.example.pet4you.ui.components.SectionBanner
 import com.example.pet4you.ui.components.SuccessOverlay
+import com.example.pet4you.ui.theme.DeepGreen
+import com.example.pet4you.ui.theme.SoftGreen
 import com.example.pet4you.viewmodel.MeetupActionState
 import com.example.pet4you.viewmodel.MeetupViewModel
 import com.google.android.gms.location.LocationServices
@@ -192,15 +197,23 @@ fun CreateMeetupScreen(
     Scaffold(
         topBar = { Pet4YouTopBar(title = "Create Meetup", onBack = onNavigateBack) },
     ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .verticalScroll(rememberScrollState())
-                .imePadding()
-                .padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
+        PawBackground(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .imePadding(),
+            ) {
+                SectionBanner(
+                    icon           = Icons.Filled.Group,
+                    subtitle       = "Plan a meetup for dog owners",
+                    containerColor = SoftGreen,
+                    iconTint       = DeepGreen,
+                )
+                Column(
+                    modifier            = Modifier.padding(24.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                ) {
             OutlinedTextField(
                 value         = title,
                 onValueChange = { title = it },
@@ -337,8 +350,10 @@ fun CreateMeetupScreen(
                 }
             }
 
-            OutlinedButton(onClick = onNavigateBack, modifier = Modifier.fillMaxWidth()) {
-                Text("Cancel")
+                    OutlinedButton(onClick = onNavigateBack, modifier = Modifier.fillMaxWidth()) {
+                        Text("Cancel")
+                    }
+                }
             }
         }
     }

@@ -39,7 +39,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.pet4you.data.model.ReminderFrequency
 import com.example.pet4you.data.model.ReminderStatus
 import com.example.pet4you.data.model.ReminderType
+import com.example.pet4you.ui.components.PawBackground
 import com.example.pet4you.ui.components.Pet4YouTopBar
+import com.example.pet4you.ui.components.SectionBanner
+import com.example.pet4you.ui.theme.DeepOrange
+import com.example.pet4you.ui.theme.SoftOrange
 import com.example.pet4you.viewmodel.ReminderActionState
 import com.example.pet4you.viewmodel.ReminderViewModel
 import java.text.SimpleDateFormat
@@ -101,14 +105,18 @@ fun AddEditReminderScreen(
             )
         },
     ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .verticalScroll(rememberScrollState())
-                .padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
+        PawBackground(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+            Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                SectionBanner(
+                    icon           = Icons.Filled.CalendarToday,
+                    subtitle       = if (isEditMode) "Update reminder" else "Schedule a care reminder",
+                    containerColor = SoftOrange,
+                    iconTint       = DeepOrange,
+                )
+                Column(
+                    modifier            = Modifier.padding(24.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                ) {
             // Dog picker
             Box {
                 OutlinedButton(onClick = { dogDropdownExpanded = true }, modifier = Modifier.fillMaxWidth()) {
@@ -195,8 +203,10 @@ fun AddEditReminderScreen(
                 }
             }
 
-            OutlinedButton(onClick = onNavigateBack, modifier = Modifier.fillMaxWidth()) {
-                Text("Cancel")
+                    OutlinedButton(onClick = onNavigateBack, modifier = Modifier.fillMaxWidth()) {
+                        Text("Cancel")
+                    }
+                }
             }
         }
     }

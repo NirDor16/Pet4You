@@ -40,7 +40,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.pet4you.data.model.ProviderType
 import com.example.pet4you.ui.components.ErrorMessage
 import com.example.pet4you.ui.components.LoadingBox
+import com.example.pet4you.ui.components.PawBackground
 import com.example.pet4you.ui.components.Pet4YouTopBar
+import com.example.pet4you.ui.components.SectionBanner
+import com.example.pet4you.ui.theme.DeepBlue
+import com.example.pet4you.ui.theme.SoftBlue
 import com.example.pet4you.viewmodel.ProfileActionState
 import com.example.pet4you.viewmodel.ProfileState
 import com.example.pet4you.viewmodel.ServiceProviderViewModel
@@ -89,14 +93,18 @@ fun ServiceProviderProfileScreen(
                 modifier = Modifier.padding(padding),
             )
             else -> {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding)
-                        .verticalScroll(rememberScrollState())
-                        .padding(24.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                ) {
+                PawBackground(modifier = Modifier.fillMaxSize().padding(padding)) {
+                Column(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                    SectionBanner(
+                        icon           = Icons.Filled.Person,
+                        subtitle       = "Your professional profile",
+                        containerColor = SoftBlue,
+                        iconTint       = DeepBlue,
+                    )
+                    Column(
+                        modifier            = Modifier.padding(24.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                    ) {
                     Surface(
                         color  = MaterialTheme.colorScheme.surfaceVariant,
                         shape  = MaterialTheme.shapes.medium,
@@ -192,7 +200,9 @@ fun ServiceProviderProfileScreen(
                             Text("Save Changes", style = MaterialTheme.typography.labelLarge)
                         }
                     }
-                }
+                    }   // closes inner Column(padding 24dp)
+                }       // closes outer Column(scroll)
+                }       // closes PawBackground
             }
         }
     }

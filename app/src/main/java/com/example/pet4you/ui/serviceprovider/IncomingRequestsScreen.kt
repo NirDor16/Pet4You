@@ -41,6 +41,7 @@ import com.example.pet4you.data.model.ServiceRequest
 import com.example.pet4you.ui.components.EmptyState
 import com.example.pet4you.ui.components.ErrorMessage
 import com.example.pet4you.ui.components.LoadingBox
+import com.example.pet4you.ui.components.PawBackground
 import com.example.pet4you.ui.components.Pet4YouTopBar
 import com.example.pet4you.ui.components.StatusBadge
 import com.example.pet4you.viewmodel.IncomingRequestsState
@@ -101,7 +102,8 @@ fun IncomingRequestsScreen(
     Scaffold(
         topBar = { Pet4YouTopBar(title = "Service Requests", onBack = onNavigateBack) },
     ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+        PawBackground(modifier = Modifier.fillMaxSize().padding(padding)) {
+        Column(modifier = Modifier.fillMaxSize()) {
             if (actionState is RequestActionState.Error) {
                 ErrorMessage(
                     message  = (actionState as RequestActionState.Error).message,
@@ -139,6 +141,7 @@ fun IncomingRequestsScreen(
                 else -> {}
             }
         }
+        }   // closes PawBackground
     }
 }
 

@@ -61,7 +61,11 @@ import com.example.pet4you.repository.WeatherRepository
 import com.example.pet4you.ui.components.ErrorMessage
 import com.example.pet4you.ui.components.InfoRow
 import com.example.pet4you.ui.components.LoadingBox
+import com.example.pet4you.ui.components.PawBackground
 import com.example.pet4you.ui.components.Pet4YouTopBar
+import com.example.pet4you.ui.components.SectionBanner
+import com.example.pet4you.ui.theme.DeepGreen
+import com.example.pet4you.ui.theme.SoftGreen
 import com.example.pet4you.viewmodel.MeetupActionState
 import com.example.pet4you.viewmodel.MeetupDetailState
 import com.example.pet4you.viewmodel.MeetupViewModel
@@ -135,14 +139,22 @@ private fun MeetupDetailContent(
     val isLoading     = actionState is MeetupActionState.Loading
     val errorMessage  = (actionState as? MeetupActionState.Error)?.message
 
+    PawBackground(modifier = Modifier.fillMaxSize().padding(padding)) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(padding)
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+            .verticalScroll(rememberScrollState()),
     ) {
+        SectionBanner(
+            icon           = Icons.Filled.Group,
+            subtitle       = meetup.location.ifEmpty { "Meetup details" },
+            containerColor = SoftGreen,
+            iconTint       = DeepGreen,
+        )
+        Column(
+            modifier            = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
         ElevatedCard(
             modifier  = Modifier.fillMaxWidth(),
             elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp),
@@ -270,7 +282,9 @@ private fun MeetupDetailContent(
                 }
             }
         }
-    }
+        }   // closes inner Column(padding 16dp)
+    }       // closes outer Column(scroll)
+    }       // closes PawBackground
 }
 
 @Composable
