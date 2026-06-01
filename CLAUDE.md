@@ -97,6 +97,8 @@ Always use these — do NOT duplicate loading/empty/error/success patterns:
 | `InfoRow(icon, text, modifier?, tint?)` | Icon + text row in detail screens |
 | `SuccessOverlay(message?)` | Full-screen Lottie checkmark + message, shown after save/create; call with `return@Screen` to block Scaffold from rendering behind it |
 | `BreedSelector(value, onValueChange, label?, onBreedSelected)` | Autocomplete dropdown for dog breeds — filters `DOG_BREEDS` list as user types, shows up to 8 matches, calls `onBreedSelected` on tap; used in AddEditDogScreen and CreateMeetupScreen |
+| `PawBackground(modifier?, content)` | Canvas backdrop drawing 8 rotated paw prints at 5% alpha — wrap every screen's Scaffold content |
+| `SectionBanner(icon, subtitle, containerColor, iconTint, modifier?)` | Accent-colored row below TopBar: 36dp icon circle + labelLarge subtitle; use section-specific colors (see Inner Screen Pattern) |
 
 ### Lottie Animation Assets (`app/src/main/assets/`)
 | File | Used in | Description |
@@ -123,8 +125,24 @@ Three-tier fallback, in order:
 
 Use `produceState<String?>(null, dog.breed)` to fetch Dog CEO URL per card. `DogCeoRepository` is a Kotlin `object` with `ConcurrentHashMap` cache — same breed fetched once per app session.
 
+### Inner Screen Pattern (form + detail screens)
+All screens reachable by tapping home cards use:
+- `PawBackground` wrapping the entire Scaffold content
+- `SectionBanner` as the first child (outside the padded form `Column`) with section-specific colors:
+
+| Section | containerColor | iconTint |
+|---------|---------------|---------|
+| Dogs | `SoftBlue` | `DeepBlue` |
+| Reminders | `SoftOrange` | `DeepOrange` |
+| Meetups | `SoftGreen` | `DeepGreen` |
+| Services / SP | `SoftBeige` | `DeepAmber` |
+
+Nesting pattern: `PawBackground(padding) → Column(scroll) → SectionBanner → Column(24dp) → form fields`
+
+List-only screens (IncomingRequests, MySchedule): PawBackground only, no SectionBanner.
+
 ### Card Style
-- Use `ElevatedCard` with `elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)`
+- Use `ElevatedCard` with `elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp)`
 - Avatar circles: `Box` with `CircleShape` + `primaryContainer` background, first letter of name (see Dog Avatar Pattern for dogs)
 
 ### Navigation Transitions
@@ -496,6 +514,7 @@ match /dog_photos/{userId}/{photo} {
 | #26 | feature/backend-proxy | Move all API keys to Render — Android calls backend only; deleted WeatherApiService + SerpApiService |
 | #27 | feature/dog-lottie | Blinking dog Lottie animation (`lottie_dog.json`) — SplashScreen (220dp) + DogListScreen empty state |
 | #28 | feature/weather-forecast | Weather by meetup date — `/weather-forecast` backend endpoint + WeatherPreview in CreateMeetupScreen + WeatherChip in MeetupListScreen + updated WeatherCard in MeetupDetailScreen |
+| #30 | feature/ui-redesign | Premium inner screens — PawBackground + SectionBanner on all form/detail screens; accent colors per section; home screen hero + colored icon containers; card elevation 3dp across app |
 
 ## What's Done ✅ — Backend
 
@@ -564,6 +583,9 @@ When the backend returns a `score` field per meetup in `/recommend-meetups`, add
 * **#24** OpenWeatherMap — weather card in MeetupDetailScreen
 * **#25** Dog park picker — GPS + SerpAPI + ModalBottomSheet → auto-fill meetup location
 * **#26** Backend proxy refactor — ALL third-party keys moved to Render env vars; Android never calls external APIs directly; `local.properties.example` added for collaborators
+
+### 2026-06-01 — Premium Inner Screens (PR #30 → feature/ui-redesign)
+* **#30** PawBackground (Canvas paw prints at 5% alpha) + SectionBanner (accent-colored icon row) applied to all form and detail screens; home screen hero gradient + Lottie dog + colored icon containers per section; card elevation unified to 3dp; all inner screen color accents section-coded (Dogs=blue, Reminders=orange, Meetups=green, Services=beige/amber)
 
 ### 2026-05-25 — Dog Animation + Date-Aware Weather (PRs #27–#28 → master)
 * **#27** Blinking dog Lottie (`lottie_dog.json`) — replaces splash animation in SplashScreen; DogListScreen empty state shows animated dog instead of generic icon
