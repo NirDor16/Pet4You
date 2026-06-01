@@ -51,7 +51,6 @@ import com.example.pet4you.repository.WeatherRepository
 import com.example.pet4you.ui.components.EmptyState
 import com.example.pet4you.ui.components.ErrorMessage
 import com.example.pet4you.ui.components.LoadingBox
-import androidx.compose.ui.graphics.Color
 import com.example.pet4you.ui.components.PawBackground
 import com.example.pet4you.ui.components.Pet4YouTopBar
 import com.example.pet4you.ui.components.StatusBadge
@@ -87,9 +86,7 @@ fun MeetupListScreen(
         if (selectedTab == 2) viewModel.loadRecommendations()
     }
 
-    PawBackground(modifier = Modifier.fillMaxSize()) {
     Scaffold(
-        containerColor = Color.Transparent,
         topBar = { Pet4YouTopBar(title = "Meetups", onBack = onNavigateBack) },
         floatingActionButton = {
             FloatingActionButton(
@@ -101,7 +98,8 @@ fun MeetupListScreen(
             }
         },
     ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+        PawBackground(modifier = Modifier.fillMaxSize().padding(padding)) {
+        Column(modifier = Modifier.fillMaxSize()) {
             TabRow(selectedTabIndex = selectedTab) {
                 tabs.forEachIndexed { index, title ->
                     Tab(
@@ -138,8 +136,8 @@ fun MeetupListScreen(
                 2 -> RecommendedTab(recommendState, onNavigateToDetail)
             }
         }
+        }   // closes PawBackground
     }
-    }   // closes PawBackground
 }
 
 @Composable

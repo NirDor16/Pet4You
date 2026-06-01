@@ -83,7 +83,7 @@ fun Pet4YouTopBar(
         },
         actions = { actions() },
         colors  = TopAppBarDefaults.topAppBarColors(
-            containerColor       = Color.Transparent,
+            containerColor       = MaterialTheme.colorScheme.surface,
             titleContentColor    = MaterialTheme.colorScheme.onSurface,
             navigationIconContentColor = MaterialTheme.colorScheme.onSurface,
             actionIconContentColor     = MaterialTheme.colorScheme.onSurface,
@@ -296,7 +296,13 @@ fun PawBackground(
     modifier: Modifier = Modifier,
     content: @Composable BoxScope.() -> Unit,
 ) {
-    Box(modifier = modifier) {
+    val bg = MaterialTheme.colorScheme.background
+    val top = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f)
+    Box(
+        modifier = modifier.background(
+            Brush.verticalGradient(listOf(top, bg))
+        ),
+    ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
             val pawColor = androidx.compose.ui.graphics.Color(0xFF006B5B).copy(alpha = 0.05f)
             listOf(

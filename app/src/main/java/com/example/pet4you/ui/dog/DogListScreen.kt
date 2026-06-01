@@ -48,7 +48,6 @@ import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.example.pet4you.data.model.Dog
 import com.example.pet4you.repository.DogCeoRepository
-import androidx.compose.ui.graphics.Color
 import com.example.pet4you.ui.components.ErrorMessage
 import com.example.pet4you.ui.components.LoadingBox
 import com.example.pet4you.ui.components.PawBackground
@@ -71,9 +70,7 @@ fun DogListScreen(
 
     LaunchedEffect(Unit) { viewModel.loadDogs() }
 
-    PawBackground(modifier = Modifier.fillMaxSize()) {
     Scaffold(
-        containerColor = Color.Transparent,
         topBar = { Pet4YouTopBar(title = "My Dogs", onBack = onNavigateBack) },
         floatingActionButton = {
             FloatingActionButton(
@@ -85,7 +82,8 @@ fun DogListScreen(
             }
         },
     ) { paddingValues ->
-        Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+        PawBackground(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+            Column(modifier = Modifier.fillMaxSize()) {
                 if (dogActionState is DogActionState.Error) {
                     ErrorMessage(
                         message  = (dogActionState as DogActionState.Error).message,
@@ -119,8 +117,8 @@ fun DogListScreen(
                     else -> {}
                 }
             }
+        }
     }
-    }   // closes PawBackground
 }
 
 @Composable
