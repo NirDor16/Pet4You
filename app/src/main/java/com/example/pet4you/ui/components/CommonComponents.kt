@@ -4,6 +4,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -331,6 +332,59 @@ private fun DrawScope.drawPawPrint(
             Offset(center.x + spread * 0.25f, center.y - spread * 1.35f),
             Offset(center.x + spread * 0.80f, center.y - spread * 1.00f),
         ).forEach { drawCircle(color, radius = toeR, center = it) }
+    }
+}
+
+@Composable
+fun SectionHero(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    containerColor: Color,
+    iconTint: Color,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(
+                Brush.verticalGradient(
+                    listOf(containerColor, containerColor.copy(alpha = 0.25f))
+                )
+            )
+            .padding(horizontal = 20.dp, vertical = 18.dp),
+    ) {
+        Row(
+            modifier          = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text  = title,
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = iconTint,
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text  = subtitle,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = iconTint.copy(alpha = 0.7f),
+                )
+            }
+            Box(
+                modifier         = Modifier
+                    .size(68.dp)
+                    .background(iconTint.copy(alpha = 0.12f), CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector        = icon,
+                    contentDescription = null,
+                    tint               = iconTint,
+                    modifier           = Modifier.size(38.dp),
+                )
+            }
+        }
     }
 }
 

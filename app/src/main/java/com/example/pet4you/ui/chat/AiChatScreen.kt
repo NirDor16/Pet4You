@@ -41,8 +41,12 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.pet4you.data.model.ChatMessage
 import com.example.pet4you.ui.components.Pet4YouTopBar
+import com.example.pet4you.ui.components.SectionHero
+import com.example.pet4you.ui.theme.DeepPurple
+import com.example.pet4you.ui.theme.SoftPurple
 import com.example.pet4you.viewmodel.AiChatViewModel
 import com.example.pet4you.viewmodel.ChatState
+import androidx.compose.material.icons.filled.SmartToy
 
 @Composable
 fun AiChatScreen(
@@ -67,27 +71,13 @@ fun AiChatScreen(
                 .padding(paddingValues)
                 .imePadding(),
         ) {
-            Row(
-                modifier              = Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-                    .padding(horizontal = 16.dp, vertical = 6.dp),
-                verticalAlignment     = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center,
-            ) {
-                Icon(
-                    imageVector        = Icons.Filled.Pets,
-                    contentDescription = null,
-                    modifier           = Modifier.size(14.dp),
-                    tint               = MaterialTheme.colorScheme.primary,
-                )
-                Spacer(Modifier.width(6.dp))
-                Text(
-                    text  = "Ask anything about your dog",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+            SectionHero(
+                icon           = Icons.Filled.SmartToy,
+                title          = "AI Chat",
+                subtitle       = "Ask anything about your dog",
+                containerColor = SoftPurple,
+                iconTint       = DeepPurple,
+            )
             LazyColumn(
                 state               = listState,
                 modifier            = Modifier.weight(1f).fillMaxWidth(),

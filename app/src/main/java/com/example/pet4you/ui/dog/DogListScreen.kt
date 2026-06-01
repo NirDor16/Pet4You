@@ -54,6 +54,7 @@ import com.example.pet4you.ui.components.ErrorMessage
 import com.example.pet4you.ui.components.LoadingBox
 import com.example.pet4you.ui.components.PawBackground
 import com.example.pet4you.ui.components.Pet4YouTopBar
+import com.example.pet4you.ui.components.SectionHero
 import com.example.pet4you.ui.theme.DeepBlue
 import com.example.pet4you.ui.theme.SoftBlue
 import com.example.pet4you.viewmodel.DogActionState
@@ -86,6 +87,13 @@ fun DogListScreen(
     ) { paddingValues ->
         PawBackground(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
         Column(modifier = Modifier.fillMaxSize()) {
+            SectionHero(
+                icon           = Icons.Filled.Pets,
+                title          = "My Dogs",
+                subtitle       = "Manage your dog profiles",
+                containerColor = SoftBlue,
+                iconTint       = DeepBlue,
+            )
             if (dogActionState is DogActionState.Error) {
                 ErrorMessage(
                     message  = (dogActionState as DogActionState.Error).message,
