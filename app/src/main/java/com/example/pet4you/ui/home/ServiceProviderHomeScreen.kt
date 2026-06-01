@@ -41,7 +41,6 @@ import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.LottieConstants
 import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
-import com.example.pet4you.ui.components.PawBackground
 import com.example.pet4you.ui.theme.DeepAmber
 import com.example.pet4you.ui.theme.DeepBlue
 import com.example.pet4you.ui.theme.DeepGreen
@@ -71,8 +70,7 @@ fun ServiceProviderHomeScreen(
         SpHomeItem(Icons.Filled.CalendarMonth, "My Schedule",      "See your approved appointments",     SoftGreen, DeepGreen, onNavigateToSchedule),
     )
 
-    PawBackground(modifier = Modifier.fillMaxSize()) {
-        Column(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = Modifier.fillMaxSize()) {
 
             // ── Hero header ───────────────────────────────────────────────────
             Box(
@@ -187,5 +185,4 @@ fun ServiceProviderHomeScreen(
                 }
             }
         }
-    }
 }
