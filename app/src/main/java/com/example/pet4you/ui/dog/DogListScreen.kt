@@ -52,7 +52,11 @@ import com.example.pet4you.data.model.Dog
 import com.example.pet4you.repository.DogCeoRepository
 import com.example.pet4you.ui.components.ErrorMessage
 import com.example.pet4you.ui.components.LoadingBox
+import com.example.pet4you.ui.components.PawBackground
 import com.example.pet4you.ui.components.Pet4YouTopBar
+import com.example.pet4you.ui.components.SectionBanner
+import com.example.pet4you.ui.theme.DeepBlue
+import com.example.pet4you.ui.theme.SoftBlue
 import com.example.pet4you.viewmodel.DogActionState
 import com.example.pet4you.viewmodel.DogListState
 import com.example.pet4you.viewmodel.DogViewModel
@@ -81,11 +85,14 @@ fun DogListScreen(
             }
         },
     ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
-        ) {
+        PawBackground(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            SectionBanner(
+                icon           = Icons.Filled.Pets,
+                subtitle       = "Your dog pack",
+                containerColor = SoftBlue,
+                iconTint       = DeepBlue,
+            )
             if (dogActionState is DogActionState.Error) {
                 ErrorMessage(
                     message  = (dogActionState as DogActionState.Error).message,
@@ -118,6 +125,7 @@ fun DogListScreen(
                 else -> {}
             }
         }
+        }   // closes PawBackground
     }
 }
 

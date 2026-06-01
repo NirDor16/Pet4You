@@ -47,8 +47,12 @@ import com.example.pet4you.repository.WeatherRepository
 import com.example.pet4you.ui.components.EmptyState
 import com.example.pet4you.ui.components.ErrorMessage
 import com.example.pet4you.ui.components.LoadingBox
+import com.example.pet4you.ui.components.PawBackground
 import com.example.pet4you.ui.components.Pet4YouTopBar
+import com.example.pet4you.ui.components.SectionBanner
 import com.example.pet4you.ui.components.StatusBadge
+import com.example.pet4you.ui.theme.DeepGreen
+import com.example.pet4you.ui.theme.SoftGreen
 import com.example.pet4you.viewmodel.MeetupActionState
 import com.example.pet4you.viewmodel.MeetupListState
 import com.example.pet4you.viewmodel.MeetupViewModel
@@ -91,7 +95,14 @@ fun MeetupListScreen(
             }
         },
     ) { padding ->
-        Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+        PawBackground(modifier = Modifier.fillMaxSize().padding(padding)) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            SectionBanner(
+                icon           = Icons.Filled.Group,
+                subtitle       = "Local dog meetups",
+                containerColor = SoftGreen,
+                iconTint       = DeepGreen,
+            )
             TabRow(selectedTabIndex = selectedTab) {
                 tabs.forEachIndexed { index, title ->
                     Tab(
@@ -128,6 +139,7 @@ fun MeetupListScreen(
                 2 -> RecommendedTab(recommendState, onNavigateToDetail)
             }
         }
+        }   // closes PawBackground
     }
 }
 

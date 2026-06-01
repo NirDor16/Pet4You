@@ -40,7 +40,11 @@ import com.example.pet4you.data.model.ServiceProvider
 import com.example.pet4you.ui.components.EmptyState
 import com.example.pet4you.ui.components.ErrorMessage
 import com.example.pet4you.ui.components.LoadingBox
+import com.example.pet4you.ui.components.PawBackground
 import com.example.pet4you.ui.components.Pet4YouTopBar
+import com.example.pet4you.ui.components.SectionBanner
+import com.example.pet4you.ui.theme.DeepAmber
+import com.example.pet4you.ui.theme.SoftBeige
 import com.example.pet4you.viewmodel.BrowseProvidersState
 import com.example.pet4you.viewmodel.BrowseProvidersViewModel
 
@@ -58,11 +62,14 @@ fun BrowseProvidersScreen(
     Scaffold(
         topBar = { Pet4YouTopBar(title = "Find Services", onBack = onNavigateBack) },
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-        ) {
+        PawBackground(modifier = Modifier.fillMaxSize().padding(padding)) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            SectionBanner(
+                icon           = Icons.Filled.Search,
+                subtitle       = "Find a pet service provider",
+                containerColor = SoftBeige,
+                iconTint       = DeepAmber,
+            )
             LazyRow(
                 modifier              = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -107,6 +114,7 @@ fun BrowseProvidersScreen(
                 else -> {}
             }
         }
+        }   // closes PawBackground
     }
 }
 
