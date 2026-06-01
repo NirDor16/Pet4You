@@ -161,6 +161,7 @@ private fun HomeNavCard(item: HomeItem) {
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp),
         colors    = CardDefaults.elevatedCardColors(
             containerColor = Color.White,
+            contentColor   = Color.Black,
         ),
     ) {
         Row(
