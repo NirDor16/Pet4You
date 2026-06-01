@@ -189,13 +189,13 @@ private fun HomeNavCard(item: HomeItem) {
                 Text(
                     text  = item.title,
                     style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = Color.Black,
                 )
                 Spacer(Modifier.height(2.dp))
                 Text(
                     text  = item.subtitle,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = Color.Black.copy(alpha = 0.6f),
                 )
             }
         }
