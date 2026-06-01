@@ -41,12 +41,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.pet4you.data.model.ChatMessage
 import com.example.pet4you.ui.components.Pet4YouTopBar
-import com.example.pet4you.ui.components.SectionHero
-import com.example.pet4you.ui.theme.DeepPurple
-import com.example.pet4you.ui.theme.SoftPurple
 import com.example.pet4you.viewmodel.AiChatViewModel
 import com.example.pet4you.viewmodel.ChatState
-import androidx.compose.material.icons.filled.SmartToy
 
 @Composable
 fun AiChatScreen(
@@ -71,13 +67,6 @@ fun AiChatScreen(
                 .padding(paddingValues)
                 .imePadding(),
         ) {
-            SectionHero(
-                icon           = Icons.Filled.SmartToy,
-                title          = "AI Chat",
-                subtitle       = "Ask anything about your dog",
-                containerColor = SoftPurple,
-                iconTint       = DeepPurple,
-            )
             LazyColumn(
                 state               = listState,
                 modifier            = Modifier.weight(1f).fillMaxWidth(),

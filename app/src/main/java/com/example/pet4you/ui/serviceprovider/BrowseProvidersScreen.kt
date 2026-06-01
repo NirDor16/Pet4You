@@ -42,7 +42,6 @@ import com.example.pet4you.ui.components.ErrorMessage
 import com.example.pet4you.ui.components.LoadingBox
 import com.example.pet4you.ui.components.PawBackground
 import com.example.pet4you.ui.components.Pet4YouTopBar
-import com.example.pet4you.ui.components.SectionHero
 import com.example.pet4you.ui.theme.DeepAmber
 import com.example.pet4you.ui.theme.SoftBeige
 import com.example.pet4you.viewmodel.BrowseProvidersState
@@ -64,13 +63,6 @@ fun BrowseProvidersScreen(
     ) { padding ->
         PawBackground(modifier = Modifier.fillMaxSize().padding(padding)) {
         Column(modifier = Modifier.fillMaxSize()) {
-            SectionHero(
-                icon           = Icons.Filled.Search,
-                title          = "Find Services",
-                subtitle       = "Vets, sitters & groomers",
-                containerColor = SoftBeige,
-                iconTint       = DeepAmber,
-            )
             LazyRow(
                 modifier              = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),

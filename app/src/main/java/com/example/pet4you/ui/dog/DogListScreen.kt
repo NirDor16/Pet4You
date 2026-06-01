@@ -3,27 +3,19 @@ package com.example.pet4you.ui.dog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.layout.ContentScale
-import coil.compose.AsyncImage
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
-import com.airbnb.lottie.compose.LottieAnimation
-import com.airbnb.lottie.compose.LottieCompositionSpec
-import com.airbnb.lottie.compose.LottieConstants
-import com.airbnb.lottie.compose.animateLottieCompositionAsState
-import com.airbnb.lottie.compose.rememberLottieComposition
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -44,17 +36,22 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
+import com.airbnb.lottie.compose.animateLottieCompositionAsState
+import com.airbnb.lottie.compose.rememberLottieComposition
 import com.example.pet4you.data.model.Dog
 import com.example.pet4you.repository.DogCeoRepository
 import com.example.pet4you.ui.components.ErrorMessage
 import com.example.pet4you.ui.components.LoadingBox
 import com.example.pet4you.ui.components.PawBackground
 import com.example.pet4you.ui.components.Pet4YouTopBar
-import com.example.pet4you.ui.components.SectionHero
 import com.example.pet4you.ui.theme.DeepBlue
 import com.example.pet4you.ui.theme.SoftBlue
 import com.example.pet4you.viewmodel.DogActionState
@@ -77,56 +74,50 @@ fun DogListScreen(
         topBar = { Pet4YouTopBar(title = "My Dogs", onBack = onNavigateBack) },
         floatingActionButton = {
             FloatingActionButton(
-                onClick           = onNavigateToAdd,
-                containerColor    = MaterialTheme.colorScheme.primary,
-                contentColor      = MaterialTheme.colorScheme.onPrimary,
+                onClick        = onNavigateToAdd,
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor   = MaterialTheme.colorScheme.onPrimary,
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Add Dog")
             }
         },
     ) { paddingValues ->
         PawBackground(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            SectionHero(
-                icon           = Icons.Filled.Pets,
-                title          = "My Dogs",
-                subtitle       = "Manage your dog profiles",
-                containerColor = SoftBlue,
-                iconTint       = DeepBlue,
-            )
-            if (dogActionState is DogActionState.Error) {
-                ErrorMessage(
-                    message  = (dogActionState as DogActionState.Error).message,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                )
-            }
-
-            when (dogListState) {
-                is DogListState.Loading -> LoadingBox()
-                is DogListState.Error   -> ErrorMessage((dogListState as DogListState.Error).message)
-                is DogListState.Success -> {
-                    val dogs = (dogListState as DogListState.Success).dogs
-                    if (dogs.isEmpty()) {
-                        DogEmptyState()
-                    } else {
-                        LazyColumn(
-                            contentPadding      = PaddingValues(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(10.dp),
-                        ) {
-                            items(dogs, key = { it.dogId }) { dog ->
-                                DogCard(
-                                    dog      = dog,
-                                    onEdit   = { onNavigateToEdit(dog.dogId) },
-                                    onDelete = { viewModel.deleteDog(dog.dogId) },
-                                )
+            Column(modifier = Modifier.fillMaxSize()) {
+                if (dogActionState is DogActionState.Error) {
+                    ErrorMessage(
+                        message  = (dogActionState as DogActionState.Error).message,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    )
+                }
+                when (dogListState) {
+                    is DogListState.Loading -> LoadingBox()
+                    is DogListState.Error   -> ErrorMessage((dogListState as DogListState.Error).message)
+                    is DogListState.Success -> {
+                        val dogs = (dogListState as DogListState.Success).dogs
+                        if (dogs.isEmpty()) {
+                            DogEmptyState()
+                        } else {
+                            LazyVerticalGrid(
+                                columns               = GridCells.Fixed(2),
+                                contentPadding        = PaddingValues(12.dp),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                verticalArrangement   = Arrangement.spacedBy(10.dp),
+                            ) {
+                                items(dogs, key = { it.dogId }) { dog ->
+                                    DogGridItem(
+                                        dog      = dog,
+                                        onEdit   = { onNavigateToEdit(dog.dogId) },
+                                        onDelete = { viewModel.deleteDog(dog.dogId) },
+                                    )
+                                }
                             }
                         }
                     }
+                    else -> {}
                 }
-                else -> {}
             }
         }
-        }   // closes PawBackground
     }
 }
 
@@ -170,72 +161,81 @@ private fun DogEmptyState() {
 }
 
 @Composable
-private fun DogAvatar(dog: Dog, size: Dp = 56.dp) {
-    if (dog.photoUrl.isNotEmpty()) {
-        AsyncImage(
-            model              = dog.photoUrl,
-            contentDescription = dog.name,
-            modifier           = Modifier.size(size).clip(CircleShape),
-            contentScale       = ContentScale.Crop,
-        )
-        return
-    }
+private fun DogGridItem(dog: Dog, onEdit: () -> Unit, onDelete: () -> Unit) {
     val breedImageUrl by produceState<String?>(null, dog.breed) {
-        value = DogCeoRepository.getBreedImageUrl(dog.breed)
+        if (dog.photoUrl.isEmpty()) value = DogCeoRepository.getBreedImageUrl(dog.breed)
     }
-    if (breedImageUrl != null) {
-        AsyncImage(
-            model              = breedImageUrl,
-            contentDescription = dog.name,
-            modifier           = Modifier.size(size).clip(CircleShape),
-            contentScale       = ContentScale.Crop,
-        )
-    } else {
-        Box(
-            modifier         = Modifier
-                .size(size)
-                .background(SoftBlue, CircleShape),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text  = dog.breed.firstOrNull()?.uppercaseChar()?.toString() ?: "?",
-                style = MaterialTheme.typography.titleLarge,
-                color = DeepBlue,
-            )
-        }
-    }
-}
 
-@Composable
-private fun DogCard(dog: Dog, onEdit: () -> Unit, onDelete: () -> Unit) {
     ElevatedCard(
         modifier  = Modifier.fillMaxWidth(),
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp),
+        shape     = MaterialTheme.shapes.medium,
     ) {
-        Row(
-            modifier          = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            DogAvatar(dog = dog)
-            Spacer(Modifier.width(14.dp))
-            Column(modifier = Modifier.weight(1f)) {
+        Column {
+            Box(
+                modifier         = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1f)
+                    .background(SoftBlue),
+                contentAlignment = Alignment.Center,
+            ) {
+                when {
+                    dog.photoUrl.isNotEmpty() -> AsyncImage(
+                        model              = dog.photoUrl,
+                        contentDescription = dog.name,
+                        modifier           = Modifier.fillMaxSize(),
+                        contentScale       = ContentScale.Crop,
+                    )
+                    breedImageUrl != null -> AsyncImage(
+                        model              = breedImageUrl,
+                        contentDescription = dog.name,
+                        modifier           = Modifier.fillMaxSize(),
+                        contentScale       = ContentScale.Crop,
+                    )
+                    else -> Text(
+                        text  = dog.breed.firstOrNull()?.uppercaseChar()?.toString() ?: "?",
+                        style = MaterialTheme.typography.displaySmall,
+                        color = DeepBlue,
+                    )
+                }
+            }
+            Column(modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)) {
                 Text(
                     text     = dog.name,
-                    style    = MaterialTheme.typography.titleMedium,
+                    style    = MaterialTheme.typography.titleSmall,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    text  = dog.breed,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    text     = dog.breed,
+                    style    = MaterialTheme.typography.labelSmall,
+                    color    = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
-            IconButton(onClick = onEdit) {
-                Icon(Icons.Default.Edit, contentDescription = "Edit", tint = MaterialTheme.colorScheme.primary)
-            }
-            IconButton(onClick = onDelete) {
-                Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
+            Row(
+                modifier              = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp, vertical = 2.dp),
+                horizontalArrangement = Arrangement.End,
+            ) {
+                IconButton(onClick = onEdit, modifier = Modifier.size(36.dp)) {
+                    Icon(
+                        imageVector        = Icons.Default.Edit,
+                        contentDescription = "Edit",
+                        tint               = MaterialTheme.colorScheme.primary,
+                        modifier           = Modifier.size(18.dp),
+                    )
+                }
+                IconButton(onClick = onDelete, modifier = Modifier.size(36.dp)) {
+                    Icon(
+                        imageVector        = Icons.Default.Delete,
+                        contentDescription = "Delete",
+                        tint               = MaterialTheme.colorScheme.error,
+                        modifier           = Modifier.size(18.dp),
+                    )
+                }
             }
         }
     }

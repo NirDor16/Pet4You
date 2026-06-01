@@ -53,7 +53,6 @@ import com.example.pet4you.ui.components.ErrorMessage
 import com.example.pet4you.ui.components.LoadingBox
 import com.example.pet4you.ui.components.PawBackground
 import com.example.pet4you.ui.components.Pet4YouTopBar
-import com.example.pet4you.ui.components.SectionHero
 import com.example.pet4you.ui.components.StatusBadge
 import com.example.pet4you.ui.theme.DeepGreen
 import com.example.pet4you.ui.theme.SoftGreen
@@ -101,13 +100,6 @@ fun MeetupListScreen(
     ) { padding ->
         PawBackground(modifier = Modifier.fillMaxSize().padding(padding)) {
         Column(modifier = Modifier.fillMaxSize()) {
-            SectionHero(
-                icon           = Icons.Filled.Group,
-                title          = "Meetups",
-                subtitle       = "Find & join local meetups",
-                containerColor = SoftGreen,
-                iconTint       = DeepGreen,
-            )
             TabRow(selectedTabIndex = selectedTab) {
                 tabs.forEachIndexed { index, title ->
                     Tab(
