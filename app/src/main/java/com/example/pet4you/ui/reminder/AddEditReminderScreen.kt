@@ -39,6 +39,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.pet4you.data.model.ReminderFrequency
 import com.example.pet4you.data.model.ReminderStatus
 import com.example.pet4you.data.model.ReminderType
+import com.example.pet4you.ui.components.PawBackground
 import com.example.pet4you.ui.components.Pet4YouTopBar
 import com.example.pet4you.viewmodel.ReminderActionState
 import com.example.pet4you.viewmodel.ReminderViewModel
@@ -101,14 +102,11 @@ fun AddEditReminderScreen(
             )
         },
     ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .verticalScroll(rememberScrollState())
-                .padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp),
-        ) {
+        PawBackground(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+            Column(
+                modifier            = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
             // Dog picker
             Box {
                 OutlinedButton(onClick = { dogDropdownExpanded = true }, modifier = Modifier.fillMaxWidth()) {
@@ -199,5 +197,6 @@ fun AddEditReminderScreen(
                 Text("Cancel")
             }
         }
+        }   // closes PawBackground
     }
 }

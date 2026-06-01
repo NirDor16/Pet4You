@@ -51,6 +51,7 @@ import com.example.pet4you.data.model.ServiceProvider
 import com.example.pet4you.ui.components.ErrorMessage
 import com.example.pet4you.ui.components.InfoRow
 import com.example.pet4you.ui.components.LoadingBox
+import com.example.pet4you.ui.components.PawBackground
 import com.example.pet4you.ui.components.Pet4YouTopBar
 import com.example.pet4you.viewmodel.ProviderDetailState
 import com.example.pet4you.viewmodel.ProviderDetailViewModel
@@ -110,17 +111,14 @@ private fun ProviderDetailContent(
     padding: PaddingValues,
     onSendRequestClick: () -> Unit,
 ) {
+    PawBackground(modifier = Modifier.fillMaxSize().padding(padding)) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(padding)
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp),
+        modifier            = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         ElevatedCard(
             modifier  = Modifier.fillMaxWidth(),
-            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
+            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp),
         ) {
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(
@@ -163,7 +161,7 @@ private fun ProviderDetailContent(
         if (provider.description.isNotEmpty()) {
             ElevatedCard(
                 modifier  = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
+                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp),
             ) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     InfoRow(icon = Icons.Filled.Notes, text = "About")
@@ -188,7 +186,8 @@ private fun ProviderDetailContent(
                 style = MaterialTheme.typography.labelLarge,
             )
         }
-    }
+    }       // closes Column(scroll+padding)
+    }       // closes PawBackground
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

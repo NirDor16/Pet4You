@@ -1,6 +1,8 @@
 package com.example.pet4you.ui.reminder
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -43,7 +45,10 @@ import com.example.pet4you.data.model.ReminderType
 import com.example.pet4you.ui.components.EmptyState
 import com.example.pet4you.ui.components.ErrorMessage
 import com.example.pet4you.ui.components.LoadingBox
+import com.example.pet4you.ui.components.PawBackground
 import com.example.pet4you.ui.components.Pet4YouTopBar
+import com.example.pet4you.ui.theme.DeepOrange
+import com.example.pet4you.ui.theme.SoftOrange
 import com.example.pet4you.viewmodel.ReminderActionState
 import com.example.pet4you.viewmodel.ReminderListState
 import com.example.pet4you.viewmodel.ReminderViewModel
@@ -75,46 +80,48 @@ fun ReminderListScreen(
             }
         },
     ) { padding ->
-        Column(
+        PawBackground(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
         ) {
-            if (reminderActionState is ReminderActionState.Error) {
-                ErrorMessage(
-                    message  = (reminderActionState as ReminderActionState.Error).message,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                )
-            }
+            Column(modifier = Modifier.fillMaxSize()) {
+                if (reminderActionState is ReminderActionState.Error) {
+                    ErrorMessage(
+                        message  = (reminderActionState as ReminderActionState.Error).message,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                    )
+                }
 
-            when (val state = reminderListState) {
-                is ReminderListState.Loading -> LoadingBox()
-                is ReminderListState.Error   -> ErrorMessage(state.message)
-                is ReminderListState.Success -> {
-                    if (state.reminders.isEmpty()) {
-                        EmptyState(
-                            icon     = Icons.Filled.Notifications,
-                            title    = "No reminders yet",
-                            subtitle = "Tap + to add your first reminder",
-                        )
-                    } else {
-                        LazyColumn(
-                            contentPadding      = PaddingValues(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(10.dp),
-                        ) {
-                            items(state.reminders, key = { it.reminderId }) { reminder ->
-                                ReminderCard(
-                                    reminder       = reminder,
-                                    dogName        = state.dogMap[reminder.dogId] ?: "Unknown dog",
-                                    onEdit         = { onNavigateToEdit(reminder.reminderId) },
-                                    onDelete       = { viewModel.deleteReminder(reminder.reminderId) },
-                                    onToggleStatus = { viewModel.toggleStatus(reminder) },
-                                )
+                when (val state = reminderListState) {
+                    is ReminderListState.Loading -> LoadingBox()
+                    is ReminderListState.Error   -> ErrorMessage(state.message)
+                    is ReminderListState.Success -> {
+                        if (state.reminders.isEmpty()) {
+                            EmptyState(
+                                icon     = Icons.Filled.Notifications,
+                                title    = "No reminders yet",
+                                subtitle = "Tap + to add your first reminder",
+                            )
+                        } else {
+                            LazyColumn(
+                                contentPadding      = PaddingValues(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(10.dp),
+                            ) {
+                                items(state.reminders, key = { it.reminderId }) { reminder ->
+                                    ReminderCard(
+                                        reminder       = reminder,
+                                        dogName        = state.dogMap[reminder.dogId] ?: "Unknown dog",
+                                        onEdit         = { onNavigateToEdit(reminder.reminderId) },
+                                        onDelete       = { viewModel.deleteReminder(reminder.reminderId) },
+                                        onToggleStatus = { viewModel.toggleStatus(reminder) },
+                                    )
+                                }
                             }
                         }
                     }
+                    else -> {}
                 }
-                else -> {}
             }
         }
     }
@@ -133,60 +140,65 @@ private fun ReminderCard(
 
     ElevatedCard(
         modifier  = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp),
     ) {
-        Column(modifier = Modifier.padding(14.dp)) {
-            Row(
-                modifier          = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
+        Row(
+            modifier          = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier         = Modifier
+                    .size(46.dp)
+                    .background(SoftOrange, MaterialTheme.shapes.medium),
+                contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     imageVector        = Icons.Filled.Notifications,
                     contentDescription = null,
-                    tint               = MaterialTheme.colorScheme.primary,
-                    modifier           = Modifier.size(20.dp),
+                    tint               = DeepOrange,
+                    modifier           = Modifier.size(24.dp),
                 )
-                Spacer(Modifier.width(8.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text  = ReminderType.displayName(reminder.type),
-                        style = MaterialTheme.typography.titleSmall,
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text  = ReminderType.displayName(reminder.type),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                Text(
+                    text  = dogName,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector        = Icons.Filled.CalendarToday,
+                        contentDescription = null,
+                        modifier           = Modifier.size(14.dp),
+                        tint               = MaterialTheme.colorScheme.primary,
                     )
+                    Spacer(Modifier.width(4.dp))
                     Text(
-                        text  = dogName,
+                        text  = dateFormatter.format(Date(reminder.dateTime)),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector        = Icons.Filled.CalendarToday,
-                            contentDescription = null,
-                            modifier           = Modifier.size(12.dp),
-                            tint               = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Spacer(Modifier.width(4.dp))
-                        Text(
-                            text  = dateFormatter.format(Date(reminder.dateTime)),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
                 }
-                FilterChip(
-                    selected = isActive,
-                    onClick  = onToggleStatus,
-                    label    = { Text(if (isActive) "Active" else "Done") },
-                    colors   = FilterChipDefaults.filterChipColors(
-                        selectedContainerColor    = MaterialTheme.colorScheme.primaryContainer,
-                        selectedLabelColor        = MaterialTheme.colorScheme.onPrimaryContainer,
-                    ),
-                )
-                IconButton(onClick = onEdit) {
-                    Icon(Icons.Default.Edit, contentDescription = "Edit", tint = MaterialTheme.colorScheme.primary)
-                }
-                IconButton(onClick = onDelete) {
-                    Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
-                }
+            }
+            FilterChip(
+                selected = isActive,
+                onClick  = onToggleStatus,
+                label    = { Text(if (isActive) "Active" else "Done") },
+                colors   = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                    selectedLabelColor     = MaterialTheme.colorScheme.onPrimaryContainer,
+                ),
+            )
+            IconButton(onClick = onEdit) {
+                Icon(Icons.Default.Edit, contentDescription = "Edit", tint = MaterialTheme.colorScheme.primary)
+            }
+            IconButton(onClick = onDelete) {
+                Icon(Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
             }
         }
     }

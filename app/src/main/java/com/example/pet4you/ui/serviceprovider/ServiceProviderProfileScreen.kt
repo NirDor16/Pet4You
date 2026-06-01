@@ -40,6 +40,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.pet4you.data.model.ProviderType
 import com.example.pet4you.ui.components.ErrorMessage
 import com.example.pet4you.ui.components.LoadingBox
+import com.example.pet4you.ui.components.PawBackground
 import com.example.pet4you.ui.components.Pet4YouTopBar
 import com.example.pet4you.viewmodel.ProfileActionState
 import com.example.pet4you.viewmodel.ProfileState
@@ -89,12 +90,9 @@ fun ServiceProviderProfileScreen(
                 modifier = Modifier.padding(padding),
             )
             else -> {
+                PawBackground(modifier = Modifier.fillMaxSize().padding(padding)) {
                 Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(padding)
-                        .verticalScroll(rememberScrollState())
-                        .padding(24.dp),
+                    modifier            = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
                     Surface(
@@ -103,8 +101,8 @@ fun ServiceProviderProfileScreen(
                         modifier = Modifier.fillMaxWidth(),
                     ) {
                         Column(
-                            modifier            = Modifier.padding(14.dp),
-                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier            = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
@@ -192,7 +190,8 @@ fun ServiceProviderProfileScreen(
                             Text("Save Changes", style = MaterialTheme.typography.labelLarge)
                         }
                     }
-                }
+                }       // closes Column(scroll+padding)
+                }       // closes PawBackground
             }
         }
     }

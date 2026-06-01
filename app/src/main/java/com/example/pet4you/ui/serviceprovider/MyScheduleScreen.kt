@@ -39,6 +39,7 @@ import com.example.pet4you.data.model.ServiceRequest
 import com.example.pet4you.ui.components.EmptyState
 import com.example.pet4you.ui.components.ErrorMessage
 import com.example.pet4you.ui.components.LoadingBox
+import com.example.pet4you.ui.components.PawBackground
 import com.example.pet4you.ui.components.Pet4YouTopBar
 import com.example.pet4you.viewmodel.MyScheduleViewModel
 import com.example.pet4you.viewmodel.ScheduleState
@@ -58,20 +59,19 @@ fun MyScheduleScreen(
     Scaffold(
         topBar = { Pet4YouTopBar(title = "My Schedule", onBack = onBack) },
     ) { padding ->
+        PawBackground(modifier = Modifier.fillMaxSize().padding(padding)) {
         when (val s = state) {
-            is ScheduleState.Loading, ScheduleState.Idle -> LoadingBox(modifier = Modifier.padding(padding))
-            is ScheduleState.Error -> ErrorMessage(s.message, modifier = Modifier.padding(padding))
+            is ScheduleState.Loading, ScheduleState.Idle -> LoadingBox()
+            is ScheduleState.Error -> ErrorMessage(s.message)
             is ScheduleState.Success -> {
                 if (s.requests.isEmpty()) {
                     EmptyState(
                         icon     = Icons.Filled.CalendarMonth,
                         title    = "No scheduled appointments",
                         subtitle = "Approved requests will appear here",
-                        modifier = Modifier.padding(padding),
                     )
                 } else {
                     LazyColumn(
-                        modifier            = Modifier.padding(padding),
                         contentPadding      = PaddingValues(16.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
@@ -87,6 +87,7 @@ fun MyScheduleScreen(
             }
             else -> {}
         }
+        }   // closes PawBackground
     }
 }
 
@@ -106,7 +107,7 @@ private fun ScheduleCard(
 
     ElevatedCard(
         modifier  = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp),
     ) {
         Row(modifier = Modifier.fillMaxWidth()) {
             Box(
@@ -119,16 +120,16 @@ private fun ScheduleCard(
                     ),
             )
             Column(
-                modifier            = Modifier.padding(14.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
+                modifier            = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 Text(
                     text  = "$dogName — $ownerName",
-                    style = MaterialTheme.typography.titleSmall,
+                    style = MaterialTheme.typography.titleMedium,
                 )
                 Text(
                     text  = request.providerType,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.primary,
                 )
                 HorizontalDivider(
@@ -139,8 +140,8 @@ private fun ScheduleCard(
                     Icon(
                         imageVector        = Icons.Filled.CalendarToday,
                         contentDescription = null,
-                        modifier           = Modifier.size(14.dp),
-                        tint               = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier           = Modifier.size(16.dp),
+                        tint               = MaterialTheme.colorScheme.primary,
                     )
                     Spacer(Modifier.width(6.dp))
                     Text(

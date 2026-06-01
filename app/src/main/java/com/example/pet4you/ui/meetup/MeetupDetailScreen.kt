@@ -61,6 +61,7 @@ import com.example.pet4you.repository.WeatherRepository
 import com.example.pet4you.ui.components.ErrorMessage
 import com.example.pet4you.ui.components.InfoRow
 import com.example.pet4you.ui.components.LoadingBox
+import com.example.pet4you.ui.components.PawBackground
 import com.example.pet4you.ui.components.Pet4YouTopBar
 import com.example.pet4you.viewmodel.MeetupActionState
 import com.example.pet4you.viewmodel.MeetupDetailState
@@ -135,17 +136,17 @@ private fun MeetupDetailContent(
     val isLoading     = actionState is MeetupActionState.Loading
     val errorMessage  = (actionState as? MeetupActionState.Error)?.message
 
+    PawBackground(modifier = Modifier.fillMaxSize().padding(padding)) {
     Column(
-        modifier = Modifier
+        modifier            = Modifier
             .fillMaxSize()
-            .padding(padding)
             .verticalScroll(rememberScrollState())
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         ElevatedCard(
             modifier  = Modifier.fillMaxWidth(),
-            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
+            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp),
         ) {
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(meetup.title.ifEmpty { "Meetup" }, style = MaterialTheme.typography.headlineSmall)
@@ -192,7 +193,7 @@ private fun MeetupDetailContent(
         if (meetup.description.isNotEmpty()) {
             ElevatedCard(
                 modifier  = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
+                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp),
             ) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     InfoRow(icon = Icons.Filled.Notes, text = "Description")
@@ -208,7 +209,7 @@ private fun MeetupDetailContent(
         if (meetup.dogBreeds.isNotEmpty()) {
             ElevatedCard(
                 modifier  = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
+                elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp),
             ) {
                 Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     InfoRow(icon = Icons.Filled.Pets, text = "Dog Breeds")
@@ -270,7 +271,8 @@ private fun MeetupDetailContent(
                 }
             }
         }
-    }
+    }       // closes Column(scroll+padding)
+    }       // closes PawBackground
 }
 
 @Composable
@@ -287,7 +289,7 @@ private fun WeatherCard(location: String, datetimeMs: Long) {
 
         ElevatedCard(
             modifier  = Modifier.fillMaxWidth(),
-            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
+            elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp),
         ) {
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 InfoRow(icon = Icons.Filled.WbSunny, text = "Weather at location")

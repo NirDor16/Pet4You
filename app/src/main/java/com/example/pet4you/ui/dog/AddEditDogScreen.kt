@@ -61,6 +61,7 @@ import coil.compose.SubcomposeAsyncImage
 import com.example.pet4you.repository.DogCeoRepository
 import com.example.pet4you.ui.components.BreedSelector
 import com.example.pet4you.ui.components.LoadingBox
+import com.example.pet4you.ui.components.PawBackground
 import com.example.pet4you.ui.components.Pet4YouTopBar
 import com.example.pet4you.viewmodel.DogActionState
 import com.example.pet4you.viewmodel.DogViewModel
@@ -109,21 +110,26 @@ fun AddEditDogScreen(
             )
         },
     ) { paddingValues ->
-        if (dogActionState is DogActionState.Success) {
-            SuccessOverlay(message = if (isEditMode) "Changes saved!" else "Dog added!")
-        } else if (isEditMode && isLoading) {
-            LoadingBox()
-        } else {
-            Column(
-                modifier            = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-                    .verticalScroll(rememberScrollState())
-                    .imePadding()
-                    .padding(24.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
+        PawBackground(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+            if (dogActionState is DogActionState.Success) {
+                SuccessOverlay(message = if (isEditMode) "Changes saved!" else "Dog added!")
+            } else if (isEditMode && isLoading) {
+                LoadingBox()
+            } else {
+                Column(
+                    modifier            = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .imePadding()
+                        .padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Column(
+                        modifier            = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
                 // Photo picker circle
                 Box(
                     modifier         = Modifier
@@ -218,6 +224,8 @@ fun AddEditDogScreen(
                             text  = if (isEditMode) "Save Changes" else "Add Dog",
                             style = MaterialTheme.typography.labelLarge,
                         )
+                    }
+                    }
                     }
                 }
             }

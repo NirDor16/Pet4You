@@ -40,7 +40,10 @@ import com.example.pet4you.data.model.ServiceProvider
 import com.example.pet4you.ui.components.EmptyState
 import com.example.pet4you.ui.components.ErrorMessage
 import com.example.pet4you.ui.components.LoadingBox
+import com.example.pet4you.ui.components.PawBackground
 import com.example.pet4you.ui.components.Pet4YouTopBar
+import com.example.pet4you.ui.theme.DeepAmber
+import com.example.pet4you.ui.theme.SoftBeige
 import com.example.pet4you.viewmodel.BrowseProvidersState
 import com.example.pet4you.viewmodel.BrowseProvidersViewModel
 
@@ -58,11 +61,8 @@ fun BrowseProvidersScreen(
     Scaffold(
         topBar = { Pet4YouTopBar(title = "Find Services", onBack = onNavigateBack) },
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding),
-        ) {
+        PawBackground(modifier = Modifier.fillMaxSize().padding(padding)) {
+        Column(modifier = Modifier.fillMaxSize()) {
             LazyRow(
                 modifier              = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -107,6 +107,7 @@ fun BrowseProvidersScreen(
                 else -> {}
             }
         }
+        }   // closes PawBackground
     }
 }
 
@@ -115,22 +116,22 @@ private fun ProviderCard(provider: ServiceProvider, onClick: () -> Unit) {
     ElevatedCard(
         onClick   = onClick,
         modifier  = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp),
     ) {
         Row(
-            modifier          = Modifier.padding(14.dp),
+            modifier          = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(
                 modifier         = Modifier
-                    .size(44.dp)
-                    .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
+                    .size(48.dp)
+                    .background(SoftBeige, MaterialTheme.shapes.medium),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     text  = provider.fullName.firstOrNull()?.uppercaseChar()?.toString() ?: "?",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    style = MaterialTheme.typography.titleLarge,
+                    color = DeepAmber,
                 )
             }
             Spacer(Modifier.width(12.dp))
@@ -141,7 +142,7 @@ private fun ProviderCard(provider: ServiceProvider, onClick: () -> Unit) {
                 )
                 Text(
                     text  = ProviderType.displayName(provider.providerType),
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.primary,
                 )
                 if (provider.location.isNotEmpty()) {

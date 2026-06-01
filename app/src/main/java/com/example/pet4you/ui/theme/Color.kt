@@ -61,3 +61,15 @@ val md_dark_inverseSurface       = Color(0xFFDFE4E0)
 val md_dark_inverseOnSurface     = Color(0xFF101512)
 val md_dark_inversePrimary       = Color(0xFF006B5B)
 val md_dark_surfaceTint          = Color(0xFF5EDBC6)
+
+// ── Dog-themed accent colors for icon containers ───────────────────────────
+val SoftBlue    = Color(0xFFBBDEFB)   // My Dogs card bg
+val SoftOrange  = Color(0xFFFFE0B2)   // Reminders card bg
+val SoftGreen   = Color(0xFFC8E6C9)   // Meetups card bg
+val SoftBeige   = Color(0xFFFFECB3)   // Find Services card bg
+val SoftPurple  = Color(0xFFE1BEE7)   // AI Chat card bg
+val DeepBlue    = Color(0xFF1565C0)   // My Dogs icon tint
+val DeepOrange  = Color(0xFFE65100)   // Reminders icon tint
+val DeepGreen   = Color(0xFF2E7D32)   // Meetups icon tint
+val DeepAmber   = Color(0xFFFF6F00)   // Find Services icon tint
+val DeepPurple  = Color(0xFF6A1B9A)   // AI Chat icon tint

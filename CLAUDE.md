@@ -97,6 +97,7 @@ Always use these — do NOT duplicate loading/empty/error/success patterns:
 | `InfoRow(icon, text, modifier?, tint?)` | Icon + text row in detail screens |
 | `SuccessOverlay(message?)` | Full-screen Lottie checkmark + message, shown after save/create; call with `return@Screen` to block Scaffold from rendering behind it |
 | `BreedSelector(value, onValueChange, label?, onBreedSelected)` | Autocomplete dropdown for dog breeds — filters `DOG_BREEDS` list as user types, shows up to 8 matches, calls `onBreedSelected` on tap; used in AddEditDogScreen and CreateMeetupScreen |
+| `PawBackground(modifier?, content)` | Canvas backdrop drawing 8 rotated paw prints at 5% alpha — used in form/detail screens (wraps Scaffold content) and list screens (wraps Scaffold content below TopBar) |
 
 ### Lottie Animation Assets (`app/src/main/assets/`)
 | File | Used in | Description |
@@ -115,16 +116,41 @@ LottieAnimation(composition, { progress }, modifier = Modifier.size(100.dp))
 ```
 Use `iterations = 1` for one-shot animations (success). Always provide a non-Lottie fallback (`CircularProgressIndicator`) in case composition is null.
 
-### Dog Avatar Pattern (DogListScreen + anywhere dogs appear)
-Three-tier fallback, in order:
-1. Custom uploaded photo (Firebase Storage URL) → `AsyncImage`
-2. No custom photo + breed mapped in `DogCeoRepository` → Dog CEO API breed photo → `AsyncImage`
-3. No match → letter circle (`Box` with `CircleShape` + `primaryContainer`, first letter of breed)
+### Dog Grid (DogListScreen)
+`DogListScreen` displays dogs as a 2-column `LazyVerticalGrid(GridCells.Fixed(2))`. Each `DogGridItem` shows:
+- Square photo area (`fillMaxWidth().aspectRatio(1f)`) with three-tier fallback:
+  1. Custom uploaded photo (Firebase Storage URL) → `AsyncImage` filling the square
+  2. No custom photo + breed mapped in `DogCeoRepository` → Dog CEO API breed photo → `AsyncImage`
+  3. No match → letter on `SoftBlue` background
+- Dog name + breed below the photo
+- Compact edit/delete icon buttons (36dp) at bottom-right
 
-Use `produceState<String?>(null, dog.breed)` to fetch Dog CEO URL per card. `DogCeoRepository` is a Kotlin `object` with `ConcurrentHashMap` cache — same breed fetched once per app session.
+Use `produceState<String?>(null, dog.breed)` inside `DogGridItem` to fetch the Dog CEO URL. `DogCeoRepository` is a Kotlin `object` with `ConcurrentHashMap` cache — same breed fetched once per app session.
+
+### Inner Screen Pattern (form + detail screens)
+All form and detail screens use `PawBackground` wrapping the Scaffold content area (below TopBar):
+```
+Scaffold(topBar = ...) { padding ->
+    PawBackground(modifier = Modifier.fillMaxSize().padding(padding)) {
+        Column(modifier = Modifier.fillMaxSize().verticalScroll(...)) {
+            // form fields or detail cards
+        }
+    }
+}
+```
+
+List screens (DogList, ReminderList, MeetupList, BrowseProviders, AiChat) also use `PawBackground` in the same position — no section banner or hero text of any kind.
+
+Section accent colors (used in card icon containers, not in headers):
+| Section | containerColor | iconTint |
+|---------|---------------|---------|
+| Dogs | `SoftBlue` | `DeepBlue` |
+| Reminders | `SoftOrange` | `DeepOrange` |
+| Meetups | `SoftGreen` | `DeepGreen` |
+| Services / SP | `SoftBeige` | `DeepAmber` |
 
 ### Card Style
-- Use `ElevatedCard` with `elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)`
+- Use `ElevatedCard` with `elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp)`
 - Avatar circles: `Box` with `CircleShape` + `primaryContainer` background, first letter of name (see Dog Avatar Pattern for dogs)
 
 ### Navigation Transitions
@@ -132,9 +158,10 @@ Use `produceState<String?>(null, dog.breed)` to fetch Dog CEO URL per card. `Dog
 - Set globally at the `NavHost` level — no per-composable override needed
 
 ### Home Screen Pattern
-- Gradient header: `Brush.verticalGradient(primary → primaryContainer)` in a `Box`
-- Feature cards: `ElevatedCard` with icon + title + subtitle in a `Column`
-- Logout: `IconButton` with `ExitToApp` icon in top-right
+- **No Scaffold, no PawBackground** — plain white system background
+- Gradient hero header: `Brush.verticalGradient(primary → primaryContainer)` in a full-width `Box` with `statusBarsPadding()`; contains "Pet4You" title, Lottie dog (100dp), logout `IconButton`
+- Feature cards: `ElevatedCard(containerColor = Color.White, contentColor = Color.Black)` — white card, black title, dark-gray subtitle (60% alpha)
+- Colored icon container per section: 52dp `Box` with `item.containerColor` background + `item.iconTint` icon
 
 ### Chat Bubble Colors
 - User bubble: `MaterialTheme.colorScheme.primary` / text: `onPrimary`
@@ -496,6 +523,8 @@ match /dog_photos/{userId}/{photo} {
 | #26 | feature/backend-proxy | Move all API keys to Render — Android calls backend only; deleted WeatherApiService + SerpApiService |
 | #27 | feature/dog-lottie | Blinking dog Lottie animation (`lottie_dog.json`) — SplashScreen (220dp) + DogListScreen empty state |
 | #28 | feature/weather-forecast | Weather by meetup date — `/weather-forecast` backend endpoint + WeatherPreview in CreateMeetupScreen + WeatherChip in MeetupListScreen + updated WeatherCard in MeetupDetailScreen |
+| #30 | feature/ui-redesign | Premium inner screens — PawBackground + SectionBanner on all form/detail screens; accent colors per section; home screen hero + colored icon containers; card elevation 3dp across app |
+| #31 | feature/ui-redesign | UI polish — DogListScreen 2-column photo grid; remove SectionHero text labels from all list screens; home screen plain white background + white cards with black text |
 
 ## What's Done ✅ — Backend
 
@@ -564,6 +593,10 @@ When the backend returns a `score` field per meetup in `/recommend-meetups`, add
 * **#24** OpenWeatherMap — weather card in MeetupDetailScreen
 * **#25** Dog park picker — GPS + SerpAPI + ModalBottomSheet → auto-fill meetup location
 * **#26** Backend proxy refactor — ALL third-party keys moved to Render env vars; Android never calls external APIs directly; `local.properties.example` added for collaborators
+
+### 2026-06-01 — Premium Inner Screens + UI Polish (PRs #30–#31 → feature/ui-redesign)
+* **#30** PawBackground (Canvas paw prints at 5% alpha) applied to all form, detail, and list screens; home screen hero gradient + Lottie dog + colored icon containers per section; card elevation unified to 3dp; section accent colors (Dogs=blue, Reminders=orange, Meetups=green, Services=beige/amber)
+* **#31** DogListScreen converted to 2-column photo grid (`LazyVerticalGrid(GridCells.Fixed(2))`) with square photo + name + edit/delete; SectionHero text banners removed from all list screens (no text headers on inner screens); home screen background plain white (no PawBackground), cards white with black text
 
 ### 2026-05-25 — Dog Animation + Date-Aware Weather (PRs #27–#28 → master)
 * **#27** Blinking dog Lottie (`lottie_dog.json`) — replaces splash animation in SplashScreen; DogListScreen empty state shows animated dog instead of generic icon

@@ -1,7 +1,13 @@
 package com.example.pet4you.ui.components
 
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -11,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Pets
@@ -42,6 +49,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -277,6 +287,146 @@ fun InfoRow(
             text  = text,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+fun PawBackground(
+    modifier: Modifier = Modifier,
+    content: @Composable BoxScope.() -> Unit,
+) {
+    val bg = MaterialTheme.colorScheme.background
+    val top = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f)
+    Box(
+        modifier = modifier.background(
+            Brush.verticalGradient(listOf(top, bg))
+        ),
+    ) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val pawColor = androidx.compose.ui.graphics.Color(0xFF006B5B).copy(alpha = 0.05f)
+            listOf(
+                Offset(size.width * 0.08f, size.height * 0.10f) to  30f,
+                Offset(size.width * 0.90f, size.height * 0.15f) to -20f,
+                Offset(size.width * 0.15f, size.height * 0.42f) to  45f,
+                Offset(size.width * 0.85f, size.height * 0.50f) to -35f,
+                Offset(size.width * 0.05f, size.height * 0.75f) to  15f,
+                Offset(size.width * 0.92f, size.height * 0.80f) to -45f,
+                Offset(size.width * 0.50f, size.height * 0.08f) to   0f,
+                Offset(size.width * 0.60f, size.height * 0.90f) to  25f,
+            ).forEach { (center, angle) ->
+                drawPawPrint(center, size.minDimension * 0.040f, pawColor, angle)
+            }
+        }
+        content()
+    }
+}
+
+private fun DrawScope.drawPawPrint(
+    center: Offset,
+    padRadius: Float,
+    color: androidx.compose.ui.graphics.Color,
+    rotationDeg: Float,
+) {
+    rotate(rotationDeg, pivot = center) {
+        drawCircle(color, radius = padRadius, center = center)
+        val toeR   = padRadius * 0.48f
+        val spread = padRadius * 1.15f
+        listOf(
+            Offset(center.x - spread * 0.80f, center.y - spread * 1.00f),
+            Offset(center.x - spread * 0.25f, center.y - spread * 1.35f),
+            Offset(center.x + spread * 0.25f, center.y - spread * 1.35f),
+            Offset(center.x + spread * 0.80f, center.y - spread * 1.00f),
+        ).forEach { drawCircle(color, radius = toeR, center = it) }
+    }
+}
+
+@Composable
+fun SectionHero(
+    icon: ImageVector,
+    title: String,
+    subtitle: String,
+    containerColor: Color,
+    iconTint: Color,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .background(
+                Brush.verticalGradient(
+                    listOf(containerColor, containerColor.copy(alpha = 0.25f))
+                )
+            )
+            .padding(horizontal = 20.dp, vertical = 18.dp),
+    ) {
+        Row(
+            modifier          = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text  = title,
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = iconTint,
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text  = subtitle,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = iconTint.copy(alpha = 0.7f),
+                )
+            }
+            Box(
+                modifier         = Modifier
+                    .size(68.dp)
+                    .background(iconTint.copy(alpha = 0.12f), CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector        = icon,
+                    contentDescription = null,
+                    tint               = iconTint,
+                    modifier           = Modifier.size(38.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun SectionBanner(
+    icon: ImageVector,
+    subtitle: String,
+    containerColor: Color,
+    iconTint: Color,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier          = modifier
+            .fillMaxWidth()
+            .background(containerColor.copy(alpha = 0.55f))
+            .padding(horizontal = 16.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier         = Modifier
+                .size(36.dp)
+                .background(iconTint.copy(alpha = 0.15f), CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector        = icon,
+                contentDescription = null,
+                tint               = iconTint,
+                modifier           = Modifier.size(20.dp),
+            )
+        }
+        Spacer(Modifier.width(12.dp))
+        Text(
+            text  = subtitle,
+            style = MaterialTheme.typography.labelLarge,
+            color = iconTint,
         )
     }
 }
