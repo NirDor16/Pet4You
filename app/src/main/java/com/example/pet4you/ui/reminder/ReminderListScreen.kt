@@ -47,7 +47,6 @@ import com.example.pet4you.ui.components.ErrorMessage
 import com.example.pet4you.ui.components.LoadingBox
 import com.example.pet4you.ui.components.PawBackground
 import com.example.pet4you.ui.components.Pet4YouTopBar
-import com.example.pet4you.ui.components.SectionBanner
 import com.example.pet4you.ui.theme.DeepOrange
 import com.example.pet4you.ui.theme.SoftOrange
 import com.example.pet4you.viewmodel.ReminderActionState
@@ -87,12 +86,6 @@ fun ReminderListScreen(
                 .padding(padding),
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
-                SectionBanner(
-                    icon           = Icons.Filled.Notifications,
-                    subtitle       = "Care schedule",
-                    containerColor = SoftOrange,
-                    iconTint       = DeepOrange,
-                )
                 if (reminderActionState is ReminderActionState.Error) {
                     ErrorMessage(
                         message  = (reminderActionState as ReminderActionState.Error).message,

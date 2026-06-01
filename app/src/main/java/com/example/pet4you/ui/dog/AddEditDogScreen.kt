@@ -63,9 +63,6 @@ import com.example.pet4you.ui.components.BreedSelector
 import com.example.pet4you.ui.components.LoadingBox
 import com.example.pet4you.ui.components.PawBackground
 import com.example.pet4you.ui.components.Pet4YouTopBar
-import com.example.pet4you.ui.components.SectionBanner
-import com.example.pet4you.ui.theme.DeepBlue
-import com.example.pet4you.ui.theme.SoftBlue
 import com.example.pet4you.viewmodel.DogActionState
 import com.example.pet4you.viewmodel.DogViewModel
 
@@ -123,17 +120,13 @@ fun AddEditDogScreen(
                     modifier            = Modifier
                         .fillMaxSize()
                         .verticalScroll(rememberScrollState())
-                        .imePadding(),
+                        .imePadding()
+                        .padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    SectionBanner(
-                        icon           = Icons.Filled.Pets,
-                        subtitle       = if (isEditMode) "Update your dog's profile" else "Add a new dog to your pack",
-                        containerColor = SoftBlue,
-                        iconTint       = DeepBlue,
-                    )
                     Column(
-                        modifier            = Modifier.padding(24.dp),
+                        modifier            = Modifier.fillMaxWidth(),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {

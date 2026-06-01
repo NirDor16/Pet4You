@@ -73,7 +73,7 @@ import com.example.pet4you.repository.WeatherRepository
 import com.example.pet4you.ui.components.BreedSelector
 import com.example.pet4you.ui.components.PawBackground
 import com.example.pet4you.ui.components.Pet4YouTopBar
-import com.example.pet4you.ui.components.SectionBanner
+
 import com.example.pet4you.ui.components.SuccessOverlay
 import com.example.pet4you.ui.theme.DeepGreen
 import com.example.pet4you.ui.theme.SoftGreen
@@ -199,21 +199,13 @@ fun CreateMeetupScreen(
     ) { paddingValues ->
         PawBackground(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
             Column(
-                modifier = Modifier
+                modifier            = Modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
-                    .imePadding(),
+                    .imePadding()
+                    .padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                SectionBanner(
-                    icon           = Icons.Filled.Group,
-                    subtitle       = "Plan a meetup for dog owners",
-                    containerColor = SoftGreen,
-                    iconTint       = DeepGreen,
-                )
-                Column(
-                    modifier            = Modifier.padding(24.dp),
-                    verticalArrangement = Arrangement.spacedBy(14.dp),
-                ) {
             OutlinedTextField(
                 value         = title,
                 onValueChange = { title = it },
@@ -350,12 +342,11 @@ fun CreateMeetupScreen(
                 }
             }
 
-                    OutlinedButton(onClick = onNavigateBack, modifier = Modifier.fillMaxWidth()) {
-                        Text("Cancel")
-                    }
-                }
+            OutlinedButton(onClick = onNavigateBack, modifier = Modifier.fillMaxWidth()) {
+                Text("Cancel")
             }
         }
+        }   // closes PawBackground
     }
 }
 

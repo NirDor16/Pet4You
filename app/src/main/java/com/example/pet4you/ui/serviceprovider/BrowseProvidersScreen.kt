@@ -42,7 +42,6 @@ import com.example.pet4you.ui.components.ErrorMessage
 import com.example.pet4you.ui.components.LoadingBox
 import com.example.pet4you.ui.components.PawBackground
 import com.example.pet4you.ui.components.Pet4YouTopBar
-import com.example.pet4you.ui.components.SectionBanner
 import com.example.pet4you.ui.theme.DeepAmber
 import com.example.pet4you.ui.theme.SoftBeige
 import com.example.pet4you.viewmodel.BrowseProvidersState
@@ -64,12 +63,6 @@ fun BrowseProvidersScreen(
     ) { padding ->
         PawBackground(modifier = Modifier.fillMaxSize().padding(padding)) {
         Column(modifier = Modifier.fillMaxSize()) {
-            SectionBanner(
-                icon           = Icons.Filled.Search,
-                subtitle       = "Find a pet service provider",
-                containerColor = SoftBeige,
-                iconTint       = DeepAmber,
-            )
             LazyRow(
                 modifier              = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -131,14 +124,14 @@ private fun ProviderCard(provider: ServiceProvider, onClick: () -> Unit) {
         ) {
             Box(
                 modifier         = Modifier
-                    .size(52.dp)
-                    .background(MaterialTheme.colorScheme.primaryContainer, CircleShape),
+                    .size(48.dp)
+                    .background(SoftBeige, MaterialTheme.shapes.medium),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     text  = provider.fullName.firstOrNull()?.uppercaseChar()?.toString() ?: "?",
                     style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    color = DeepAmber,
                 )
             }
             Spacer(Modifier.width(12.dp))

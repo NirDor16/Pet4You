@@ -1,13 +1,17 @@
 package com.example.pet4you.ui.meetup
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -49,7 +53,6 @@ import com.example.pet4you.ui.components.ErrorMessage
 import com.example.pet4you.ui.components.LoadingBox
 import com.example.pet4you.ui.components.PawBackground
 import com.example.pet4you.ui.components.Pet4YouTopBar
-import com.example.pet4you.ui.components.SectionBanner
 import com.example.pet4you.ui.components.StatusBadge
 import com.example.pet4you.ui.theme.DeepGreen
 import com.example.pet4you.ui.theme.SoftGreen
@@ -97,12 +100,6 @@ fun MeetupListScreen(
     ) { padding ->
         PawBackground(modifier = Modifier.fillMaxSize().padding(padding)) {
         Column(modifier = Modifier.fillMaxSize()) {
-            SectionBanner(
-                icon           = Icons.Filled.Group,
-                subtitle       = "Local dog meetups",
-                containerColor = SoftGreen,
-                iconTint       = DeepGreen,
-            )
             TabRow(selectedTabIndex = selectedTab) {
                 tabs.forEachIndexed { index, title ->
                     Tab(
@@ -250,69 +247,66 @@ private fun MeetupCard(
         modifier  = Modifier.fillMaxWidth(),
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 3.dp),
     ) {
-        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Row(
-                modifier              = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment     = Alignment.CenterVertically,
+        Row(
+            modifier          = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.Top,
+        ) {
+            Box(
+                modifier         = Modifier
+                    .size(46.dp)
+                    .background(SoftGreen, MaterialTheme.shapes.medium),
+                contentAlignment = Alignment.Center,
             ) {
-                if (meetup.title.isNotEmpty()) {
+                Icon(Icons.Filled.Group, contentDescription = null, tint = DeepGreen, modifier = Modifier.size(24.dp))
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(
+                    modifier              = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment     = Alignment.CenterVertically,
+                ) {
                     Text(
-                        text     = meetup.title,
+                        text     = meetup.title.ifEmpty { "Meetup" },
                         style    = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.weight(1f).padding(end = 8.dp),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
+                    when {
+                        isCreator     -> StatusBadge("Mine", MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.onPrimaryContainer)
+                        isParticipant -> StatusBadge("Joined", MaterialTheme.colorScheme.tertiaryContainer, MaterialTheme.colorScheme.onTertiaryContainer)
+                        meetup.recommendationScore != null -> StatusBadge(
+                            label          = "${(meetup.recommendationScore!! * 100).toInt()}% match",
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor   = MaterialTheme.colorScheme.onPrimaryContainer,
+                        )
+                    }
                 }
-                when {
-                    isCreator     -> StatusBadge("Your meetup", MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.onPrimaryContainer)
-                    isParticipant -> StatusBadge("Joined", MaterialTheme.colorScheme.tertiaryContainer, MaterialTheme.colorScheme.onTertiaryContainer)
-                    meetup.recommendationScore != null -> StatusBadge(
-                        label          = "Match ${(meetup.recommendationScore!! * 100).toInt()}%",
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        contentColor   = MaterialTheme.colorScheme.onPrimaryContainer,
-                    )
-                }
-            }
-
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.LocationOn, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
-                Text("  ${meetup.location}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Filled.CalendarToday, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
-                Text("  ${dateFormatter.format(Date(meetup.dateTime))}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-
-            if (meetup.description.isNotEmpty()) {
-                Text(
-                    text     = meetup.description,
-                    style    = MaterialTheme.typography.bodySmall,
-                    color    = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-
-            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp), color = MaterialTheme.colorScheme.outlineVariant)
-
-            Row(
-                modifier              = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment     = Alignment.CenterVertically,
-            ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Filled.Group, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))
-                    val participantText = if (meetup.participantLimit > 0)
-                        "${meetup.participants.size} / ${meetup.participantLimit} participants"
-                    else
-                        "${meetup.participants.size} participant(s)"
-                    Text("  $participantText", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+                    Icon(Icons.Filled.LocationOn, contentDescription = null, tint = DeepGreen, modifier = Modifier.size(13.dp))
+                    Text("  ${meetup.location}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
-                val daysUntil = (meetup.dateTime - System.currentTimeMillis()) / 86_400_000
-                if (daysUntil in 0..5 && meetup.location.isNotBlank()) {
-                    WeatherChip(location = meetup.location, datetimeMs = meetup.dateTime)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Filled.CalendarToday, contentDescription = null, tint = DeepGreen, modifier = Modifier.size(13.dp))
+                    Text("  ${dateFormatter.format(Date(meetup.dateTime))}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Row(
+                    modifier              = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment     = Alignment.CenterVertically,
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Filled.Group, contentDescription = null, tint = DeepGreen, modifier = Modifier.size(13.dp))
+                        val participantText = if (meetup.participantLimit > 0)
+                            "  ${meetup.participants.size}/${meetup.participantLimit}"
+                        else "  ${meetup.participants.size} joining"
+                        Text(participantText, style = MaterialTheme.typography.bodySmall, color = DeepGreen)
+                    }
+                    val daysUntil = (meetup.dateTime - System.currentTimeMillis()) / 86_400_000
+                    if (daysUntil in 0..5 && meetup.location.isNotBlank()) {
+                        WeatherChip(location = meetup.location, datetimeMs = meetup.dateTime)
+                    }
                 }
             }
         }
