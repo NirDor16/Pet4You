@@ -29,7 +29,13 @@ class ReminderRepository {
         }
     }
 
-    suspend fun addReminder(dogId: String, type: String, dateTime: Long, frequency: String): Result<Unit> {
+    suspend fun addReminder(
+        dogId: String,
+        type: String,
+        dateTime: Long,
+        frequency: String,
+        sourceRequestId: String = ""
+    ): Result<Unit> {
         return try {
             val uid = currentUserId ?: return Result.failure(Exception("User not logged in"))
             val docRef = firestore.collection("reminders").document()
@@ -40,9 +46,24 @@ class ReminderRepository {
                 type = type,
                 dateTime = dateTime,
                 frequency = frequency,
-                status = ReminderStatus.ACTIVE
+                status = ReminderStatus.ACTIVE,
+                sourceRequestId = sourceRequestId
             )
             docRef.set(reminder).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun deleteReminderBySourceRequest(requestId: String): Result<Unit> {
+        return try {
+            val uid = currentUserId ?: return Result.failure(Exception("User not logged in"))
+            val snapshot = firestore.collection("reminders")
+                .whereEqualTo("ownerId", uid)
+                .whereEqualTo("sourceRequestId", requestId)
+                .get().await()
+            snapshot.documents.forEach { it.reference.delete().await() }
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)

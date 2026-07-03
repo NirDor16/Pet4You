@@ -70,6 +70,20 @@ class IncomingRequestsViewModel : ViewModel() {
         }
     }
 
+    fun cancelRequest(requestId: String) {
+        viewModelScope.launch {
+            _actionState.value = RequestActionState.Loading
+            val result = repository.updateRequestStatus(requestId, RequestStatus.CANCELLED)
+            if (result.isSuccess) {
+                loadRequests()
+            } else {
+                _actionState.value = RequestActionState.Error(
+                    result.exceptionOrNull()?.message ?: "Failed to cancel appointment"
+                )
+            }
+        }
+    }
+
     fun rejectRequest(requestId: String) {
         viewModelScope.launch {
             _actionState.value = RequestActionState.Loading

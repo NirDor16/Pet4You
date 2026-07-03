@@ -99,7 +99,11 @@ private fun ScheduleCard(
 ) {
     val dateStr = remember(request.scheduledAt) {
         if (request.scheduledAt > 0L) {
-            SimpleDateFormat("dd MMM yyyy, HH:mm", Locale.getDefault()).format(Date(request.scheduledAt))
+            val dateFormat = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+            val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+            val start = Date(request.scheduledAt)
+            val end = Date(request.scheduledAt + 3_600_000L)
+            "${dateFormat.format(start)}, ${timeFormat.format(start)}–${timeFormat.format(end)}"
         } else {
             "No date set"
         }
