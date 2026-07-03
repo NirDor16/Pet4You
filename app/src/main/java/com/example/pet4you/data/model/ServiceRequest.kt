@@ -9,7 +9,8 @@ data class ServiceRequest(
     val message: String = "",
     val status: String = RequestStatus.PENDING,
     val createdAt: Long = System.currentTimeMillis(),
-    val scheduledAt: Long = 0L
+    val scheduledAt: Long = 0L,
+    val reminderCreated: Boolean = false
 )
 
 object RequestStatus {

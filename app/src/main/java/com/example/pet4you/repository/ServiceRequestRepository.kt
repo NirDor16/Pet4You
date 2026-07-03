@@ -18,7 +18,8 @@ class ServiceRequestRepository {
         serviceProviderId: String,
         dogId: String,
         providerType: String,
-        message: String
+        message: String,
+        scheduledAt: Long
     ): Result<ServiceRequest> {
         val uid = currentUserId ?: return Result.failure(Exception("Not logged in"))
         return try {
@@ -30,7 +31,8 @@ class ServiceRequestRepository {
                 dogId = dogId,
                 providerType = providerType,
                 message = message,
-                status = RequestStatus.PENDING
+                status = RequestStatus.PENDING,
+                scheduledAt = scheduledAt
             )
             ref.set(request).await()
             Result.success(request)
@@ -50,6 +52,43 @@ class ServiceRequestRepository {
                 .mapNotNull { it.toObject(ServiceRequest::class.java) }
                 .firstOrNull { it.status != RequestStatus.REJECTED }
             Result.success(active)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getActiveRequestsForProvider(serviceProviderId: String): Result<List<ServiceRequest>> {
+        return try {
+            val snapshot = firestore.collection("serviceRequests")
+                .whereEqualTo("serviceProviderId", serviceProviderId)
+                .get().await()
+            val active = snapshot.documents
+                .mapNotNull { it.toObject(ServiceRequest::class.java) }
+                .filter { it.status != RequestStatus.REJECTED }
+            Result.success(active)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getApprovedRequestsForCurrentOwner(): Result<List<ServiceRequest>> {
+        val uid = currentUserId ?: return Result.failure(Exception("Not logged in"))
+        return try {
+            val snapshot = firestore.collection("serviceRequests")
+                .whereEqualTo("dogOwnerId", uid)
+                .whereEqualTo("status", RequestStatus.APPROVED)
+                .get().await()
+            Result.success(snapshot.documents.mapNotNull { it.toObject(ServiceRequest::class.java) })
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun markReminderCreated(requestId: String): Result<Unit> {
+        return try {
+            firestore.collection("serviceRequests").document(requestId)
+                .update("reminderCreated", true).await()
+            Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
         }

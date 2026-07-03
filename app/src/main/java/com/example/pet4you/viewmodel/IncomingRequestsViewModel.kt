@@ -56,10 +56,10 @@ class IncomingRequestsViewModel : ViewModel() {
         }
     }
 
-    fun approveRequest(requestId: String, scheduledAt: Long) {
+    fun approveRequest(requestId: String) {
         viewModelScope.launch {
             _actionState.value = RequestActionState.Loading
-            val result = repository.updateRequestStatus(requestId, RequestStatus.APPROVED, scheduledAt)
+            val result = repository.updateRequestStatus(requestId, RequestStatus.APPROVED)
             if (result.isSuccess) {
                 loadRequests()
             } else {

@@ -11,9 +11,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.LocationOn
@@ -22,19 +25,26 @@ import androidx.compose.material.icons.filled.Work
 import androidx.compose.material3.Button
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -60,6 +70,10 @@ import com.example.pet4you.ui.components.StatusBadge
 import com.example.pet4you.viewmodel.ProviderDetailState
 import com.example.pet4you.viewmodel.ProviderDetailViewModel
 import com.example.pet4you.viewmodel.SendRequestState
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -96,9 +110,10 @@ fun ProviderDetailScreen(
                     SendRequestDialog(
                         provider         = s.provider,
                         dogs             = s.dogs,
+                        activeRequests   = s.activeRequests,
                         sendRequestState = sendRequestState,
-                        onSend           = { dogId, message ->
-                            viewModel.sendRequest(s.provider.serviceProviderId, dogId, s.provider.providerType, message)
+                        onSend           = { dogId, message, scheduledAt ->
+                            viewModel.sendRequest(s.provider.serviceProviderId, dogId, s.provider.providerType, message, scheduledAt)
                         },
                         onDismiss = { showDialog = false; viewModel.resetSendState() },
                     )
@@ -226,27 +241,84 @@ private fun ProviderDetailContent(
     }       // closes PawBackground
 }
 
+private val WORK_HOURS = 9..17 // slot start hours: 9:00..17:00 (9 one-hour slots, workday 9-18)
+
+private fun localDayStart(utcMidnightMillis: Long): Long {
+    val utcCal = Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC")).apply { timeInMillis = utcMidnightMillis }
+    return Calendar.getInstance().apply {
+        set(utcCal.get(Calendar.YEAR), utcCal.get(Calendar.MONTH), utcCal.get(Calendar.DAY_OF_MONTH), 0, 0, 0)
+        set(Calendar.MILLISECOND, 0)
+    }.timeInMillis
+}
+
+private fun slotMillis(dayStartMillis: Long, hour: Int): Long = Calendar.getInstance().apply {
+    timeInMillis = dayStartMillis
+    set(Calendar.HOUR_OF_DAY, hour); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+}.timeInMillis
+
+private fun isSameLocalDay(dayStartMillis: Long, otherMillis: Long): Boolean {
+    val a = Calendar.getInstance().apply { timeInMillis = dayStartMillis }
+    val b = Calendar.getInstance().apply { timeInMillis = otherMillis }
+    return a.get(Calendar.YEAR) == b.get(Calendar.YEAR) && a.get(Calendar.DAY_OF_YEAR) == b.get(Calendar.DAY_OF_YEAR)
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SendRequestDialog(
     provider: ServiceProvider,
     dogs: List<Dog>,
+    activeRequests: List<ServiceRequest>,
     sendRequestState: SendRequestState,
-    onSend: (dogId: String, message: String) -> Unit,
+    onSend: (dogId: String, message: String, scheduledAt: Long) -> Unit,
     onDismiss: () -> Unit,
 ) {
     var selectedDog        by remember { mutableStateOf<Dog?>(null) }
     var message            by remember { mutableStateOf("") }
     var dogDropdownExpanded by remember { mutableStateOf(false) }
+    var selectedDayMillis   by remember { mutableStateOf<Long?>(null) }
+    var selectedHour        by remember { mutableStateOf<Int?>(null) }
+    var showDatePicker      by remember { mutableStateOf(false) }
 
     val isLoading    = sendRequestState is SendRequestState.Loading
     val errorMessage = (sendRequestState as? SendRequestState.Error)?.message
+
+    val todayStart = remember {
+        Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0); set(Calendar.MINUTE, 0); set(Calendar.SECOND, 0); set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+    }
+    val datePickerState = rememberDatePickerState(
+        selectableDates = object : SelectableDates {
+            override fun isSelectableDate(utcTimeMillis: Long): Boolean =
+                localDayStart(utcTimeMillis) >= todayStart
+        },
+    )
+
+    if (showDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    val selected = datePickerState.selectedDateMillis
+                    if (selected != null) {
+                        selectedDayMillis = localDayStart(selected)
+                        selectedHour = null
+                    }
+                    showDatePicker = false
+                }) { Text("OK") }
+            },
+            dismissButton = { TextButton(onClick = { showDatePicker = false }) { Text("Cancel") } },
+        ) { DatePicker(state = datePickerState) }
+    }
 
     AlertDialog(
         onDismissRequest = { if (!isLoading) onDismiss() },
         title = { Text("Send Request to ${provider.fullName.ifEmpty { "Provider" }}") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(
+                modifier            = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
                 ExposedDropdownMenuBox(
                     expanded         = dogDropdownExpanded,
                     onExpandedChange = { dogDropdownExpanded = it },
@@ -272,6 +344,36 @@ private fun SendRequestDialog(
                     }
                 }
 
+                Text(text = "Choose a day and time", style = MaterialTheme.typography.labelLarge)
+
+                OutlinedButton(onClick = { showDatePicker = true }, modifier = Modifier.fillMaxWidth()) {
+                    Icon(Icons.Filled.CalendarToday, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        selectedDayMillis?.let {
+                            SimpleDateFormat("EEE, dd MMM yyyy", Locale.getDefault()).format(Date(it))
+                        } ?: "Select a date",
+                    )
+                }
+
+                if (selectedDayMillis != null) {
+                    val day = selectedDayMillis!!
+                    val now = System.currentTimeMillis()
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        items(WORK_HOURS.toList()) { hour ->
+                            val slot = slotMillis(day, hour)
+                            val isTaken = activeRequests.any { it.scheduledAt == slot }
+                            val isPast = isSameLocalDay(day, now) && slot <= now
+                            FilterChip(
+                                selected = selectedHour == hour,
+                                onClick  = { selectedHour = hour },
+                                enabled  = !isTaken && !isPast,
+                                label    = { Text(String.format(Locale.getDefault(), "%02d:00", hour)) },
+                            )
+                        }
+                    }
+                }
+
                 OutlinedTextField(
                     value         = message,
                     onValueChange = { message = it },
@@ -291,8 +393,13 @@ private fun SendRequestDialog(
         },
         confirmButton = {
             Button(
-                onClick = { selectedDog?.let { onSend(it.dogId, message) } },
-                enabled = !isLoading && selectedDog != null,
+                onClick = {
+                    val dog = selectedDog ?: return@Button
+                    val day = selectedDayMillis ?: return@Button
+                    val hour = selectedHour ?: return@Button
+                    onSend(dog.dogId, message, slotMillis(day, hour))
+                },
+                enabled = !isLoading && selectedDog != null && selectedDayMillis != null && selectedHour != null,
             ) {
                 if (isLoading) {
                     CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)

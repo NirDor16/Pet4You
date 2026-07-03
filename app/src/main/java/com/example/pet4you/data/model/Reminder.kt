@@ -21,8 +21,9 @@ object ReminderType {
     const val CHECKUP = "CHECKUP"
     const val VACCINATION = "VACCINATION"
     const val GROOMING = "GROOMING"
+    const val DOG_SITTING = "DOG_SITTING"
 
-    val all = listOf(MEDICATION, FEEDING, CHECKUP, VACCINATION, GROOMING)
+    val all = listOf(MEDICATION, FEEDING, CHECKUP, VACCINATION, GROOMING, DOG_SITTING)
 
     fun displayName(type: String) = when (type) {
         MEDICATION -> "Medication"
@@ -30,6 +31,7 @@ object ReminderType {
         CHECKUP -> "Checkup"
         VACCINATION -> "Vaccination"
         GROOMING -> "Grooming"
+        DOG_SITTING -> "Dog Sitting"
         else -> type
     }
 }
