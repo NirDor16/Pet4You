@@ -50,7 +50,12 @@ class AdminViewModel : ViewModel() {
             val result = repository.setUserBlocked(uid, blocked)
             if (result.isSuccess) {
                 _actionState.value = AdminActionState.Success
-                loadUsers()
+                val current = _state.value
+                if (current is AdminState.Success) {
+                    _state.value = AdminState.Success(
+                        current.users.map { if (it.uid == uid) it.copy(isBlocked = blocked) else it }
+                    )
+                }
             } else {
                 _actionState.value = AdminActionState.Error(
                     result.exceptionOrNull()?.message ?: "Action failed"
