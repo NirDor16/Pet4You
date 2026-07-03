@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pet4you.data.model.Dog
 import com.example.pet4you.data.model.ServiceProvider
+import com.example.pet4you.data.model.ServiceRequest
 import com.example.pet4you.repository.DogRepository
 import com.example.pet4you.repository.ServiceProviderRepository
 import com.example.pet4you.repository.ServiceRequestRepository
@@ -15,7 +16,11 @@ import kotlinx.coroutines.launch
 sealed class ProviderDetailState {
     object Idle : ProviderDetailState()
     object Loading : ProviderDetailState()
-    data class Loaded(val provider: ServiceProvider, val dogs: List<Dog>) : ProviderDetailState()
+    data class Loaded(
+        val provider: ServiceProvider,
+        val dogs: List<Dog>,
+        val existingRequest: ServiceRequest? = null,
+    ) : ProviderDetailState()
     data class Error(val message: String) : ProviderDetailState()
 }
 
@@ -43,14 +48,17 @@ class ProviderDetailViewModel : ViewModel() {
             _detailState.value = ProviderDetailState.Loading
             val providerDeferred = async { providerRepository.getProviderById(providerId) }
             val dogsDeferred = async { dogRepository.getDogsForCurrentUser() }
+            val existingRequestDeferred = async { requestRepository.getActiveRequestToProvider(providerId) }
 
             val providerResult = providerDeferred.await()
             val dogsResult = dogsDeferred.await()
+            val existingRequestResult = existingRequestDeferred.await()
 
             _detailState.value = if (providerResult.isSuccess) {
                 ProviderDetailState.Loaded(
                     provider = providerResult.getOrNull()!!,
-                    dogs = dogsResult.getOrNull() ?: emptyList()
+                    dogs = dogsResult.getOrNull() ?: emptyList(),
+                    existingRequest = existingRequestResult.getOrNull(),
                 )
             } else {
                 ProviderDetailState.Error(providerResult.exceptionOrNull()?.message ?: "Failed to load provider")
@@ -67,10 +75,14 @@ class ProviderDetailViewModel : ViewModel() {
         viewModelScope.launch {
             _sendRequestState.value = SendRequestState.Loading
             val result = requestRepository.createRequest(serviceProviderId, dogId, providerType, message)
-            _sendRequestState.value = if (result.isSuccess) {
-                SendRequestState.Success
+            if (result.isSuccess) {
+                _sendRequestState.value = SendRequestState.Success
+                val current = _detailState.value
+                if (current is ProviderDetailState.Loaded) {
+                    _detailState.value = current.copy(existingRequest = result.getOrNull())
+                }
             } else {
-                SendRequestState.Error(result.exceptionOrNull()?.message ?: "Failed to send request")
+                _sendRequestState.value = SendRequestState.Error(result.exceptionOrNull()?.message ?: "Failed to send request")
             }
         }
     }
