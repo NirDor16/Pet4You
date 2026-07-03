@@ -3,9 +3,13 @@ package com.example.pet4you.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pet4you.data.model.Dog
+import com.example.pet4you.data.model.ProviderType
 import com.example.pet4you.data.model.Reminder
+import com.example.pet4you.data.model.ReminderFrequency
 import com.example.pet4you.data.model.ReminderStatus
+import com.example.pet4you.data.model.ReminderType
 import com.example.pet4you.repository.ReminderRepository
+import com.example.pet4you.repository.ServiceRequestRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -28,6 +32,7 @@ sealed class ReminderActionState {
 class ReminderViewModel : ViewModel() {
 
     private val repository = ReminderRepository()
+    private val serviceRequestRepository = ServiceRequestRepository()
 
     private val _reminderListState = MutableStateFlow<ReminderListState>(ReminderListState.Idle)
     val reminderListState: StateFlow<ReminderListState> = _reminderListState
@@ -38,9 +43,27 @@ class ReminderViewModel : ViewModel() {
     private val _dogs = MutableStateFlow<List<Dog>>(emptyList())
     val dogs: StateFlow<List<Dog>> = _dogs
 
+    private suspend fun syncApprovedRequestsIntoReminders() {
+        val approved = serviceRequestRepository.getApprovedRequestsForCurrentOwner().getOrNull() ?: return
+        for (request in approved) {
+            if (request.reminderCreated) continue
+            val reminderType = when (request.providerType) {
+                ProviderType.VET -> ReminderType.CHECKUP
+                ProviderType.GROOMER -> ReminderType.GROOMING
+                ProviderType.DOG_SITTER -> ReminderType.DOG_SITTING
+                else -> ReminderType.CHECKUP
+            }
+            val addResult = repository.addReminder(request.dogId, reminderType, request.scheduledAt, ReminderFrequency.ONCE)
+            if (addResult.isSuccess) {
+                serviceRequestRepository.markReminderCreated(request.requestId)
+            }
+        }
+    }
+
     fun loadReminders() {
         viewModelScope.launch {
             _reminderListState.value = ReminderListState.Loading
+            syncApprovedRequestsIntoReminders()
             val dogsResult = repository.getDogsForCurrentUser()
             val remindersResult = repository.getRemindersForCurrentUser()
             _reminderListState.value = if (remindersResult.isSuccess) {

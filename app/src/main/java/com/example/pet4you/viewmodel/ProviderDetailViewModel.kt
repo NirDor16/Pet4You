@@ -20,6 +20,7 @@ sealed class ProviderDetailState {
         val provider: ServiceProvider,
         val dogs: List<Dog>,
         val existingRequest: ServiceRequest? = null,
+        val activeRequests: List<ServiceRequest> = emptyList(),
     ) : ProviderDetailState()
     data class Error(val message: String) : ProviderDetailState()
 }
@@ -49,16 +50,19 @@ class ProviderDetailViewModel : ViewModel() {
             val providerDeferred = async { providerRepository.getProviderById(providerId) }
             val dogsDeferred = async { dogRepository.getDogsForCurrentUser() }
             val existingRequestDeferred = async { requestRepository.getActiveRequestToProvider(providerId) }
+            val activeRequestsDeferred = async { requestRepository.getActiveRequestsForProvider(providerId) }
 
             val providerResult = providerDeferred.await()
             val dogsResult = dogsDeferred.await()
             val existingRequestResult = existingRequestDeferred.await()
+            val activeRequestsResult = activeRequestsDeferred.await()
 
             _detailState.value = if (providerResult.isSuccess) {
                 ProviderDetailState.Loaded(
                     provider = providerResult.getOrNull()!!,
                     dogs = dogsResult.getOrNull() ?: emptyList(),
                     existingRequest = existingRequestResult.getOrNull(),
+                    activeRequests = activeRequestsResult.getOrNull() ?: emptyList(),
                 )
             } else {
                 ProviderDetailState.Error(providerResult.exceptionOrNull()?.message ?: "Failed to load provider")
@@ -70,11 +74,12 @@ class ProviderDetailViewModel : ViewModel() {
         serviceProviderId: String,
         dogId: String,
         providerType: String,
-        message: String
+        message: String,
+        scheduledAt: Long
     ) {
         viewModelScope.launch {
             _sendRequestState.value = SendRequestState.Loading
-            val result = requestRepository.createRequest(serviceProviderId, dogId, providerType, message)
+            val result = requestRepository.createRequest(serviceProviderId, dogId, providerType, message, scheduledAt)
             if (result.isSuccess) {
                 _sendRequestState.value = SendRequestState.Success
                 val current = _detailState.value
