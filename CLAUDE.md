@@ -219,7 +219,7 @@ All provider types share the same UI, but providerType is used for filtering and
 * **reminders**: reminderId, ownerId, dogId, type, dateTime, frequency, status (ACTIVE/DONE)
 * **meetups**: meetupId, creatorId, title, location, dateTime, description, participants[], dogBreeds[], participantLimit (0=unlimited), createdAt — `recommendationScore` is transient (not in Firestore, `@get:Exclude`, populated from `/recommend-meetups` response)
 * **serviceProviders**: serviceProviderId (=uid), providerType, fullName, email, description, location, isAvailable, createdAt
-* **serviceRequests**: requestId, dogOwnerId, serviceProviderId, dogId, providerType, message, status (PENDING/APPROVED/REJECTED), createdAt, scheduledAt
+* **serviceRequests**: requestId, dogOwnerId, serviceProviderId, dogId, providerType, message, status (PENDING/APPROVED/REJECTED), createdAt, scheduledAt, reminderCreated (⚠️ on `feature/owner-scheduled-appointments`, not yet merged — see In Progress)
 
 ## App Architecture Layers
 
@@ -525,6 +525,10 @@ match /dog_photos/{userId}/{photo} {
 | #28 | feature/weather-forecast | Weather by meetup date — `/weather-forecast` backend endpoint + WeatherPreview in CreateMeetupScreen + WeatherChip in MeetupListScreen + updated WeatherCard in MeetupDetailScreen |
 | #30 | feature/ui-redesign | Premium inner screens — PawBackground + SectionBanner on all form/detail screens; accent colors per section; home screen hero + colored icon containers; card elevation 3dp across app |
 | #31 | feature/ui-redesign | UI polish — DogListScreen 2-column photo grid; remove SectionHero text labels from all list screens; home screen plain white background + white cards with black text |
+| #31 | feature/admin-panel-fixes | AdminScreen hides the Block/Unblock toggle for the currently signed-in admin's own row (self-block was previously possible with no in-app recovery); Block/Unblock now updates local list state directly instead of a full reload |
+| #32 | feature/prevent-duplicate-service-requests | ProviderDetailScreen shows existing PENDING/APPROVED request status inline and disables "Send Service Request" while one is active for that provider (previously rejected requests can still be resent) |
+
+*Note: PR #31 appears twice above — the `feature/ui-redesign` polish commits landed inside GitHub PR #30 itself, while a separate later PR genuinely got assigned #31 for `feature/admin-panel-fixes`. Table numbers reflect actual GitHub PR numbers, not a strict internal sequence.*
 
 ## What's Done ✅ — Backend
 
@@ -543,6 +547,19 @@ match /dog_photos/{userId}/{photo} {
 | 2026-05-12 | Firestore Security Rules — production rules scoped per collection and role |
 | 2026-05-24 | Firebase Storage Rules — dog_photos/{userId}/{photo} — owner write, any auth read |
 | 2026-05-24 | Render env vars — OPENWEATHER_API_KEY + SERP_API_KEY added to backend service |
+
+## In Progress 🚧
+
+### Owner-Scheduled Appointments (`feature/owner-scheduled-appointments` — pushed, PR not yet opened/merged)
+Flips the booking flow: the dog owner now picks the exact appointment slot when sending a request, instead of the provider picking it at approval time.
+
+- All providers share a fixed workday: 9:00–18:00, 1-hour slots (9 slots/day). No per-provider hours field.
+- `ProviderDetailScreen`'s `SendRequestDialog` adds a day picker (`DatePickerDialog`, today+future only) and an hour-slot row (`FilterChip` per hour) computed from `ProviderDetailState.Loaded.activeRequests`. A slot is disabled if taken (any non-REJECTED request at that exact time) or already past (if selected day is today).
+- `IncomingRequestsScreen`'s Approve button is now a single tap — the old DatePicker+TimePicker chain on approve is removed. `RequestCard` displays the requested `scheduledAt` so the provider sees it before approving.
+- `MyScheduleScreen`/`MyScheduleViewModel` needed no changes — already read `scheduledAt` correctly.
+- **Reminder auto-sync**: when a request is APPROVED, the appointment should appear in the dog owner's Reminders. Firestore rules only let a user write `reminders` with `ownerId == their own uid`, so the provider's approval can't create it directly. Instead, `ReminderViewModel.loadReminders()` now calls `syncApprovedRequestsIntoReminders()` first — it fetches the owner's own APPROVED requests (`getApprovedRequestsForCurrentOwner()`), creates a missing reminder per request (VET→`CHECKUP`, GROOMER→`GROOMING`, DOG_SITTER→new `ReminderType.DOG_SITTING`, frequency `ONCE`), then marks `reminderCreated = true` on that request to avoid duplicates. **This means the reminder appears the next time the dog owner opens the Reminders screen, not instantly** — consistent with the rest of the app (no push/real-time anywhere).
+- New: `ServiceRequest.reminderCreated: Boolean = false`; `ReminderType.DOG_SITTING`; `ServiceRequestRepository.getActiveRequestsForProvider()`, `.getApprovedRequestsForCurrentOwner()`, `.markReminderCreated()`; `createRequest(...)` now takes a `scheduledAt` param.
+- Status: compiles clean (`./gradlew compileDebugKotlin`), unit tests pass (`./gradlew testDebugUnitTest`). **Manual QA not yet performed** — walk through the checklist in the plan file before opening a PR.
 
 ## Future Work 🔮
 
@@ -601,6 +618,16 @@ When the backend returns a `score` field per meetup in `/recommend-meetups`, add
 ### 2026-05-25 — Dog Animation + Date-Aware Weather (PRs #27–#28 → master)
 * **#27** Blinking dog Lottie (`lottie_dog.json`) — replaces splash animation in SplashScreen; DogListScreen empty state shows animated dog instead of generic icon
 * **#28** Weather forecast by meetup date — `/weather-forecast` backend endpoint (OWM current/forecast routing); `WeatherPreview` in CreateMeetupScreen (live preview when date changes); `WeatherChip` in MeetupListScreen cards (meetups within 5 days); `WeatherRepository.getWeatherForDate()` with hour-bucket cache; `WeatherCard` in MeetupDetailScreen updated to use forecast instead of current weather
+
+### 2026-07-03 — Admin Safety + Duplicate-Request Prevention (PRs #31–#32 → master)
+* **#31** AdminScreen can no longer be used by an admin to block their own account (self-block previously required a manual Firestore edit to undo); Block/Unblock now updates the list in place instead of a full reload
+* **#32** ProviderDetailScreen shows an inline PENDING/APPROVED status badge and disables the send button once a dog owner already has an active request to that provider
+
+### 2026-07-03 — Owner-Scheduled Appointments (`feature/owner-scheduled-appointments`, pending PR)
+* Dog owner picks the exact day + hour slot (fixed 9:00–18:00 workday) when sending a service request instead of the provider choosing it at approval time; taken/past slots are disabled in the picker
+* Provider approval simplified to a single tap; `IncomingRequestsScreen` shows the requested slot on each card before approving
+* Approved requests sync into the dog owner's Reminders the next time they open that screen (see In Progress section above for why it's not instant)
+* Branch pushed, compiles clean, unit tests pass — **not yet merged**, manual QA still pending
 
 ---
 
