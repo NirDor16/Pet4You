@@ -19,7 +19,7 @@ class ServiceRequestRepository {
         dogId: String,
         providerType: String,
         message: String
-    ): Result<Unit> {
+    ): Result<ServiceRequest> {
         val uid = currentUserId ?: return Result.failure(Exception("Not logged in"))
         return try {
             val ref = firestore.collection("serviceRequests").document()
@@ -33,7 +33,23 @@ class ServiceRequestRepository {
                 status = RequestStatus.PENDING
             )
             ref.set(request).await()
-            Result.success(Unit)
+            Result.success(request)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getActiveRequestToProvider(serviceProviderId: String): Result<ServiceRequest?> {
+        val uid = currentUserId ?: return Result.failure(Exception("Not logged in"))
+        return try {
+            val snapshot = firestore.collection("serviceRequests")
+                .whereEqualTo("dogOwnerId", uid)
+                .whereEqualTo("serviceProviderId", serviceProviderId)
+                .get().await()
+            val active = snapshot.documents
+                .mapNotNull { it.toObject(ServiceRequest::class.java) }
+                .firstOrNull { it.status != RequestStatus.REJECTED }
+            Result.success(active)
         } catch (e: Exception) {
             Result.failure(e)
         }

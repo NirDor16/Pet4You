@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -47,12 +48,15 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.pet4you.data.model.Dog
 import com.example.pet4you.data.model.ProviderType
+import com.example.pet4you.data.model.RequestStatus
 import com.example.pet4you.data.model.ServiceProvider
+import com.example.pet4you.data.model.ServiceRequest
 import com.example.pet4you.ui.components.ErrorMessage
 import com.example.pet4you.ui.components.InfoRow
 import com.example.pet4you.ui.components.LoadingBox
 import com.example.pet4you.ui.components.PawBackground
 import com.example.pet4you.ui.components.Pet4YouTopBar
+import com.example.pet4you.ui.components.StatusBadge
 import com.example.pet4you.viewmodel.ProviderDetailState
 import com.example.pet4you.viewmodel.ProviderDetailViewModel
 import com.example.pet4you.viewmodel.SendRequestState
@@ -84,6 +88,7 @@ fun ProviderDetailScreen(
                 ProviderDetailContent(
                     provider          = s.provider,
                     dogs              = s.dogs,
+                    existingRequest   = s.existingRequest,
                     padding           = padding,
                     onSendRequestClick = { showDialog = true },
                 )
@@ -108,6 +113,7 @@ fun ProviderDetailScreen(
 private fun ProviderDetailContent(
     provider: ServiceProvider,
     dogs: List<Dog>,
+    existingRequest: ServiceRequest?,
     padding: PaddingValues,
     onSendRequestClick: () -> Unit,
 ) {
@@ -176,13 +182,43 @@ private fun ProviderDetailContent(
 
         Spacer(Modifier.height(4.dp))
 
+        if (existingRequest != null) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text     = "You already sent a request to this provider",
+                    style    = MaterialTheme.typography.bodySmall,
+                    color    = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f),
+                )
+                Spacer(Modifier.width(8.dp))
+                StatusBadge(
+                    label          = existingRequest.status,
+                    containerColor = if (existingRequest.status == RequestStatus.APPROVED) {
+                        MaterialTheme.colorScheme.primaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.tertiaryContainer
+                    },
+                    contentColor = if (existingRequest.status == RequestStatus.APPROVED) {
+                        MaterialTheme.colorScheme.onPrimaryContainer
+                    } else {
+                        MaterialTheme.colorScheme.onTertiaryContainer
+                    },
+                )
+            }
+            Spacer(Modifier.height(4.dp))
+        }
+
         Button(
             onClick  = onSendRequestClick,
             modifier = Modifier.fillMaxWidth().height(52.dp),
-            enabled  = dogs.isNotEmpty(),
+            enabled  = dogs.isNotEmpty() && existingRequest == null,
         ) {
             Text(
-                text  = if (dogs.isEmpty()) "No dogs registered" else "Send Service Request",
+                text  = when {
+                    existingRequest != null -> "Request Already Sent"
+                    dogs.isEmpty() -> "No dogs registered"
+                    else -> "Send Service Request"
+                },
                 style = MaterialTheme.typography.labelLarge,
             )
         }
