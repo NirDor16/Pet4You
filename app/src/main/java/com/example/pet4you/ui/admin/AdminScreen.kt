@@ -40,6 +40,7 @@ import com.example.pet4you.ui.components.Pet4YouTopBar
 import com.example.pet4you.viewmodel.AdminActionState
 import com.example.pet4you.viewmodel.AdminState
 import com.example.pet4you.viewmodel.AdminViewModel
+import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun AdminScreen(
@@ -48,6 +49,7 @@ fun AdminScreen(
 ) {
     val state       by viewModel.state.collectAsState()
     val actionState by viewModel.actionState.collectAsState()
+    val currentUid  = FirebaseAuth.getInstance().currentUser?.uid
 
     LaunchedEffect(Unit) { viewModel.loadUsers() }
     LaunchedEffect(actionState) {
@@ -92,6 +94,7 @@ fun AdminScreen(
                             items(s.users, key = { it.uid }) { user ->
                                 UserCard(
                                     user          = user,
+                                    isSelf        = user.uid == currentUid,
                                     onToggleBlock = { viewModel.setBlocked(user.uid, !user.isBlocked) },
                                 )
                             }
@@ -105,7 +108,7 @@ fun AdminScreen(
 }
 
 @Composable
-private fun UserCard(user: User, onToggleBlock: () -> Unit) {
+private fun UserCard(user: User, isSelf: Boolean, onToggleBlock: () -> Unit) {
     val statusContainerColor = if (user.isBlocked) {
         MaterialTheme.colorScheme.errorContainer
     } else {
@@ -156,7 +159,13 @@ private fun UserCard(user: User, onToggleBlock: () -> Unit) {
                     )
                 }
                 Spacer(Modifier.height(2.dp))
-                if (user.isBlocked) {
+                if (isSelf) {
+                    Text(
+                        text  = "This is you",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                } else if (user.isBlocked) {
                     Button(
                         onClick = onToggleBlock,
                         colors  = ButtonDefaults.buttonColors(
