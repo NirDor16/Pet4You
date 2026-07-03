@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -94,6 +95,7 @@ fun IncomingRequestsScreen(
                                     dogName   = s.dogMap[request.dogId] ?: request.dogId,
                                     onApprove = { viewModel.approveRequest(request.requestId) },
                                     onReject  = { viewModel.rejectRequest(request.requestId) },
+                                    onCancel  = { viewModel.cancelRequest(request.requestId) },
                                 )
                             }
                         }
@@ -113,10 +115,11 @@ private fun RequestCard(
     dogName: String,
     onApprove: () -> Unit,
     onReject: () -> Unit,
+    onCancel: () -> Unit,
 ) {
     val (containerColor, contentColor) = when (request.status) {
         RequestStatus.APPROVED -> MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer
-        RequestStatus.REJECTED -> MaterialTheme.colorScheme.errorContainer to MaterialTheme.colorScheme.onErrorContainer
+        RequestStatus.REJECTED, RequestStatus.CANCELLED -> MaterialTheme.colorScheme.errorContainer to MaterialTheme.colorScheme.onErrorContainer
         else -> MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.onTertiaryContainer
     }
 
@@ -154,7 +157,7 @@ private fun RequestCard(
                         tint               = MaterialTheme.colorScheme.primary,
                     )
                     Text(
-                        text     = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date(request.scheduledAt)),
+                        text     = formatAppointmentRange(request.scheduledAt),
                         style    = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(start = 6.dp),
                     )
@@ -176,6 +179,25 @@ private fun RequestCard(
                     OutlinedButton(onClick = onReject, modifier = Modifier.weight(1f)) { Text("Reject") }
                 }
             }
+
+            if (request.status == RequestStatus.APPROVED) {
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.outlineVariant)
+                OutlinedButton(
+                    onClick  = onCancel,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors   = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error,
+                    ),
+                ) { Text("Cancel Appointment") }
+            }
         }
     }
+}
+
+private fun formatAppointmentRange(scheduledAt: Long): String {
+    val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+    val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+    val start = Date(scheduledAt)
+    val end = Date(scheduledAt + 3_600_000L)
+    return "${dateFormat.format(start)}  ${timeFormat.format(start)}–${timeFormat.format(end)}"
 }

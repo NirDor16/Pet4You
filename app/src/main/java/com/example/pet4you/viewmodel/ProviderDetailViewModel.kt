@@ -3,6 +3,7 @@ package com.example.pet4you.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.pet4you.data.model.Dog
+import com.example.pet4you.data.model.RequestStatus
 import com.example.pet4you.data.model.ServiceProvider
 import com.example.pet4you.data.model.ServiceRequest
 import com.example.pet4you.repository.DogRepository
@@ -94,5 +95,17 @@ class ProviderDetailViewModel : ViewModel() {
 
     fun resetSendState() {
         _sendRequestState.value = SendRequestState.Idle
+    }
+
+    fun cancelRequest(requestId: String) {
+        viewModelScope.launch {
+            val result = requestRepository.updateRequestStatus(requestId, RequestStatus.CANCELLED)
+            if (result.isSuccess) {
+                val current = _detailState.value
+                if (current is ProviderDetailState.Loaded) {
+                    _detailState.value = current.copy(existingRequest = null)
+                }
+            }
+        }
     }
 }

@@ -50,7 +50,7 @@ class ServiceRequestRepository {
                 .get().await()
             val active = snapshot.documents
                 .mapNotNull { it.toObject(ServiceRequest::class.java) }
-                .firstOrNull { it.status != RequestStatus.REJECTED }
+                .firstOrNull { it.isActive() }
             Result.success(active)
         } catch (e: Exception) {
             Result.failure(e)
@@ -64,8 +64,21 @@ class ServiceRequestRepository {
                 .get().await()
             val active = snapshot.documents
                 .mapNotNull { it.toObject(ServiceRequest::class.java) }
-                .filter { it.status != RequestStatus.REJECTED }
+                .filter { it.isActive() }
             Result.success(active)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun getCancelledRequestsForCurrentOwner(): Result<List<ServiceRequest>> {
+        val uid = currentUserId ?: return Result.failure(Exception("Not logged in"))
+        return try {
+            val snapshot = firestore.collection("serviceRequests")
+                .whereEqualTo("dogOwnerId", uid)
+                .whereEqualTo("status", RequestStatus.CANCELLED)
+                .get().await()
+            Result.success(snapshot.documents.mapNotNull { it.toObject(ServiceRequest::class.java) })
         } catch (e: Exception) {
             Result.failure(e)
         }

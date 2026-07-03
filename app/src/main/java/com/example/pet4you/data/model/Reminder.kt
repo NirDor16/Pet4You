@@ -7,7 +7,8 @@ data class Reminder(
     val type: String = "",
     val dateTime: Long = 0L,
     val frequency: String = "",
-    val status: String = ReminderStatus.ACTIVE
+    val status: String = ReminderStatus.ACTIVE,
+    val sourceRequestId: String = ""
 )
 
 object ReminderStatus {

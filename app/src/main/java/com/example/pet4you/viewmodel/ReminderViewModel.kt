@@ -53,10 +53,19 @@ class ReminderViewModel : ViewModel() {
                 ProviderType.DOG_SITTER -> ReminderType.DOG_SITTING
                 else -> ReminderType.CHECKUP
             }
-            val addResult = repository.addReminder(request.dogId, reminderType, request.scheduledAt, ReminderFrequency.ONCE)
+            val addResult = repository.addReminder(
+                request.dogId, reminderType, request.scheduledAt, ReminderFrequency.ONCE, request.requestId
+            )
             if (addResult.isSuccess) {
                 serviceRequestRepository.markReminderCreated(request.requestId)
             }
+        }
+    }
+
+    private suspend fun removeRemindersForCancelledRequests() {
+        val cancelled = serviceRequestRepository.getCancelledRequestsForCurrentOwner().getOrNull() ?: return
+        for (request in cancelled) {
+            repository.deleteReminderBySourceRequest(request.requestId)
         }
     }
 
@@ -64,12 +73,18 @@ class ReminderViewModel : ViewModel() {
         viewModelScope.launch {
             _reminderListState.value = ReminderListState.Loading
             syncApprovedRequestsIntoReminders()
+            removeRemindersForCancelledRequests()
             val dogsResult = repository.getDogsForCurrentUser()
             val remindersResult = repository.getRemindersForCurrentUser()
             _reminderListState.value = if (remindersResult.isSuccess) {
+                val now = System.currentTimeMillis()
+                val (expired, live) = remindersResult.getOrNull()!!.partition {
+                    it.sourceRequestId.isNotEmpty() && it.dateTime <= now
+                }
+                expired.forEach { repository.deleteReminder(it.reminderId) }
                 val dogMap = dogsResult.getOrNull()?.associate { it.dogId to it.name } ?: emptyMap()
                 ReminderListState.Success(
-                    reminders = remindersResult.getOrNull()!!,
+                    reminders = live,
                     dogMap = dogMap
                 )
             } else {

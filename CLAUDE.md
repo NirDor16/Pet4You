@@ -216,10 +216,10 @@ All provider types share the same UI, but providerType is used for filtering and
 
 * **users**: uid, fullName, email, role, isBlocked, createdAt
 * **dogs**: dogId, ownerId, name, breed, birthDate, notes, photoUrl (Firebase Storage URL; empty string = no photo)
-* **reminders**: reminderId, ownerId, dogId, type, dateTime, frequency, status (ACTIVE/DONE)
+* **reminders**: reminderId, ownerId, dogId, type, dateTime, frequency, status (ACTIVE/DONE), sourceRequestId (empty for manually-created reminders; set to the originating `ServiceRequest.requestId` for auto-synced appointment reminders — lets cancellation/expiry cleanup find and delete the right reminder)
 * **meetups**: meetupId, creatorId, title, location, dateTime, description, participants[], dogBreeds[], participantLimit (0=unlimited), createdAt — `recommendationScore` is transient (not in Firestore, `@get:Exclude`, populated from `/recommend-meetups` response)
 * **serviceProviders**: serviceProviderId (=uid), providerType, fullName, email, description, location, isAvailable, createdAt
-* **serviceRequests**: requestId, dogOwnerId, serviceProviderId, dogId, providerType, message, status (PENDING/APPROVED/REJECTED), createdAt, scheduledAt (now set by the dog owner at request-creation time, not by the provider on approval), reminderCreated (guards the auto-reminder sync, see Future Work)
+* **serviceRequests**: requestId, dogOwnerId, serviceProviderId, dogId, providerType, message, status (PENDING/APPROVED/REJECTED/CANCELLED), createdAt, scheduledAt (set by the dog owner at request-creation time, not by the provider on approval; appointment duration is always 1 hour, so `scheduledAt + 3_600_000L` = end time), reminderCreated (guards the auto-reminder sync, see Future Work). `ServiceRequest.isActive()` — true if PENDING, or APPROVED with `scheduledAt` still in the future; used to free up a slot/allow re-requesting once a request is cancelled or its appointment time has passed
 
 ## App Architecture Layers
 
@@ -552,7 +552,14 @@ match /dog_photos/{userId}/{photo} {
 ## Future Work 🔮
 
 ### Reminder Sync Is Lazy, Not Instant
-When a service request is APPROVED, the appointment is synced into the dog owner's Reminders by `ReminderViewModel.syncApprovedRequestsIntoReminders()` (called at the top of `loadReminders()`) — but only the next time the dog owner opens the Reminders screen, not the instant the provider approves. This is because Firestore rules only let a user write `reminders` with `ownerId == their own uid`, so the provider's client can't create it directly; only the owner's own client can, lazily. Guarded against duplicates via `ServiceRequest.reminderCreated`. If real-time delivery is ever wanted, it would need Firebase Cloud Functions / Admin SDK on the backend (not currently used anywhere in this project) — out of scope unless explicitly requested.
+`ReminderViewModel.loadReminders()` runs three sync steps every time the dog owner opens the Reminders screen, all lazy (not instant), because Firestore rules only let a user write `reminders` with `ownerId == their own uid` — the provider's or the other side's client can never touch the dog owner's reminders directly, only the owner's own client can, on next load:
+1. `syncApprovedRequestsIntoReminders()` — creates a reminder for any newly-APPROVED request without one yet (guarded by `ServiceRequest.reminderCreated`).
+2. `removeRemindersForCancelledRequests()` — deletes the reminder (via `Reminder.sourceRequestId`) for any of the owner's own requests that are now CANCELLED (cancellable by either side — provider via `IncomingRequestsScreen`, dog owner via the Cancel button next to the status badge on `ProviderDetailScreen`).
+3. Inline in `loadReminders()` — any appointment-linked reminder (`sourceRequestId` non-empty) whose `dateTime` has already passed is deleted before the list is returned, so past appointments clear themselves out without user action.
+
+Cancelling or letting an appointment's time pass also makes `ServiceRequest.isActive()` return false, which frees the dog owner to send a new request to the same provider (`getActiveRequestToProvider`) and frees that exact slot for anyone (`getActiveRequestsForProvider`).
+
+If real-time delivery is ever wanted instead of next-screen-open sync, it would need Firebase Cloud Functions / Admin SDK on the backend (not currently used anywhere in this project) — out of scope unless explicitly requested.
 
 ### Recommendation Algorithm — Extend Scoring
 The Dijkstra-based algorithm is live. To improve it (backend only — `dijkstra_recommend()` in `app.py`):

@@ -11,10 +11,17 @@ data class ServiceRequest(
     val createdAt: Long = System.currentTimeMillis(),
     val scheduledAt: Long = 0L,
     val reminderCreated: Boolean = false
-)
+) {
+    fun isActive(now: Long = System.currentTimeMillis()): Boolean = when (status) {
+        RequestStatus.PENDING -> true
+        RequestStatus.APPROVED -> scheduledAt > now
+        else -> false
+    }
+}
 
 object RequestStatus {
     const val PENDING = "PENDING"
     const val APPROVED = "APPROVED"
     const val REJECTED = "REJECTED"
+    const val CANCELLED = "CANCELLED"
 }

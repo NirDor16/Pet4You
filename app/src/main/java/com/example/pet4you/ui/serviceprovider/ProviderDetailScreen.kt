@@ -23,6 +23,7 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Notes
 import androidx.compose.material.icons.filled.Work
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
@@ -105,6 +106,7 @@ fun ProviderDetailScreen(
                     existingRequest   = s.existingRequest,
                     padding           = padding,
                     onSendRequestClick = { showDialog = true },
+                    onCancelRequest    = { s.existingRequest?.let { viewModel.cancelRequest(it.requestId) } },
                 )
                 if (showDialog) {
                     SendRequestDialog(
@@ -131,6 +133,7 @@ private fun ProviderDetailContent(
     existingRequest: ServiceRequest?,
     padding: PaddingValues,
     onSendRequestClick: () -> Unit,
+    onCancelRequest: () -> Unit,
 ) {
     PawBackground(modifier = Modifier.fillMaxSize().padding(padding)) {
     Column(
@@ -220,6 +223,21 @@ private fun ProviderDetailContent(
                     },
                 )
             }
+            if (existingRequest.scheduledAt > 0L) {
+                Text(
+                    text     = formatAppointmentRange(existingRequest.scheduledAt),
+                    style    = MaterialTheme.typography.bodySmall,
+                    color    = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+            }
+            if (existingRequest.status == RequestStatus.APPROVED) {
+                OutlinedButton(
+                    onClick  = onCancelRequest,
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    colors   = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                ) { Text("Cancel Appointment") }
+            }
             Spacer(Modifier.height(4.dp))
         }
 
@@ -260,6 +278,14 @@ private fun isSameLocalDay(dayStartMillis: Long, otherMillis: Long): Boolean {
     val a = Calendar.getInstance().apply { timeInMillis = dayStartMillis }
     val b = Calendar.getInstance().apply { timeInMillis = otherMillis }
     return a.get(Calendar.YEAR) == b.get(Calendar.YEAR) && a.get(Calendar.DAY_OF_YEAR) == b.get(Calendar.DAY_OF_YEAR)
+}
+
+private fun formatAppointmentRange(scheduledAt: Long): String {
+    val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+    val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+    val start = Date(scheduledAt)
+    val end = Date(scheduledAt + 3_600_000L)
+    return "${dateFormat.format(start)}  ${timeFormat.format(start)}–${timeFormat.format(end)}"
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
