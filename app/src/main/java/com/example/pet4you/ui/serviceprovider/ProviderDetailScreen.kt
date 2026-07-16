@@ -394,7 +394,7 @@ private fun SendRequestDialog(
                                 selected = selectedHour == hour,
                                 onClick  = { selectedHour = hour },
                                 enabled  = !isTaken && !isPast,
-                                label    = { Text(String.format(Locale.getDefault(), "%02d:00", hour)) },
+                                label    = { Text(String.format(Locale.getDefault(), "%02d:00 - %02d:00", hour, hour + 1)) },
                             )
                         }
                     }
